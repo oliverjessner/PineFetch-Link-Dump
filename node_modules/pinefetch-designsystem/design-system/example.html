@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PineFetch Design System Example</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="pinefetch.css" />
+    </head>
+    <body>
+        <main class="pf-app-shell pf-app-shell-narrow">
+            <section class="pf-panel" aria-labelledby="demo-title">
+                <header class="pf-panel-header">
+                    <div class="pf-panel-heading">
+                        <h1 id="demo-title" class="pf-title">PineFetch UI</h1>
+                        <p class="pf-subtitle">Reusable controls for compact tools.</p>
+                    </div>
+                    <span class="pf-badge">Ready</span>
+                </header>
+
+                <div class="pf-segmented" role="tablist" aria-label="Mode">
+                    <button class="pf-segmented-btn pf-is-active" type="button" aria-selected="true">Single</button>
+                    <button class="pf-segmented-btn" type="button" aria-selected="false">Batch</button>
+                    <button class="pf-segmented-btn" type="button" aria-selected="false">Log</button>
+                </div>
+
+                <div class="pf-stack-sm">
+                    <label class="pf-field">
+                        <span class="pf-label">URL</span>
+                        <input class="pf-input" type="url" placeholder="https://example.com/video" />
+                        <span class="pf-status">Paste a URL to prepare the action.</span>
+                    </label>
+
+                    <label class="pf-field">
+                        <span class="pf-label">Preset</span>
+                        <select class="pf-select">
+                            <option>Best available</option>
+                            <option>Audio only</option>
+                            <option>Small file</option>
+                        </select>
+                    </label>
+
+                    <label class="pf-field">
+                        <span class="pf-label">Notes</span>
+                        <textarea class="pf-textarea" placeholder="Optional helper text for this task"></textarea>
+                    </label>
+                </div>
+
+                <label class="pf-toggle">
+                    <span class="pf-toggle-copy">
+                        <span class="pf-toggle-title">Auto-start</span>
+                        <span class="pf-toggle-hint">Run the primary action as soon as the input is valid.</span>
+                    </span>
+                    <input class="pf-toggle-input" type="checkbox" checked />
+                    <span class="pf-toggle-track" aria-hidden="true"></span>
+                </label>
+
+                <div class="pf-panel-soft">
+                    <div class="pf-toolbar">
+                        <div class="pf-panel-heading">
+                            <h2 class="pf-section-title">Status</h2>
+                            <p class="pf-subtitle">Small labels, helper text, and utility states.</p>
+                        </div>
+                        <span class="pf-badge pf-badge-warning">Beta</span>
+                    </div>
+                    <p class="pf-status pf-status-success">Ready to queue.</p>
+                    <p class="pf-status pf-status-warning">Network checks are paused.</p>
+                    <p class="pf-status pf-status-error">Example error state.</p>
+                </div>
+
+                <div class="pf-divider"></div>
+
+                <p class="pf-hint">Use the token colors and prefixed classes when embedding this in another app.</p>
+
+                <div class="pf-field-row">
+                    <button class="pf-btn pf-btn-primary pf-grow" type="button">Queue</button>
+                    <button class="pf-btn pf-btn-ghost" type="button">Preview</button>
+                    <button class="pf-btn pf-btn-danger" type="button">Clear</button>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>

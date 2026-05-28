@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "PineFetch Link Dump",
+  "version": "1.0.0",
+  "description": "Export YouTube links from the current tab or send them to a local PineFetch instance.",
+  "icons": {
+    "16": "assets/images/logo.png",
+    "32": "assets/images/logo.png",
+    "48": "assets/images/logo.png",
+    "128": "assets/images/logo.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtu.be/*",
+    "http://127.0.1:2255/*",
+    "http://127.0.0.1:2255/*",
+    "http://localhost:2255/*"
+  ],
+  "action": {
+    "default_title": "PineFetch Link Dump",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/images/logo.png",
+      "32": "assets/images/logo.png",
+      "48": "assets/images/logo.png",
+      "128": "assets/images/logo.png"
+    }
+  }
+}

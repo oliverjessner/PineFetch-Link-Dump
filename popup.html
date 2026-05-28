@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>PineFetch Link Dump</title>
+        <link rel="icon" href="assets/images/logo.png" type="image/png" />
+        <link rel="stylesheet" href="vendor/pinefetch.min.css" />
+        <style>
+            html,
+            body {
+                width: 420px;
+                min-width: 420px;
+                max-width: 420px;
+                min-height: 0;
+                overflow-x: hidden;
+            }
+
+            body {
+                margin: 0;
+            }
+
+            .pf-popup-shell {
+                width: 420px;
+                max-width: 420px;
+                min-height: 0;
+                padding: var(--pf-space-3xl);
+            }
+
+            .pf-brand-row {
+                flex: 1 1 auto;
+                flex-wrap: nowrap;
+                align-items: center;
+                min-width: 0;
+            }
+
+            .pf-popup-header {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .pf-popup-header > .pf-badge {
+                flex: 0 0 auto;
+            }
+
+            .pf-popup-header .pf-title {
+                font-size: 1.08rem;
+                letter-spacing: 0;
+            }
+
+            .pf-brand-logo {
+                width: 44px;
+                height: 44px;
+                flex: 0 0 auto;
+                object-fit: contain;
+                border-radius: var(--pf-radius-md);
+            }
+
+            .pf-action-row {
+                flex-wrap: nowrap;
+            }
+
+            .pf-action-row .pf-btn {
+                min-width: 0;
+            }
+
+            .pf-footer-row {
+                justify-content: space-between;
+                flex-wrap: nowrap;
+                align-items: center;
+            }
+
+            .pf-footer-row .pf-status {
+                min-width: 0;
+            }
+
+            .pf-version-label {
+                flex: 0 0 auto;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="pf-app-shell pf-app-shell-narrow pf-popup-shell">
+            <section class="pf-panel" aria-labelledby="pfPopupTitle">
+                <header class="pf-panel-header pf-popup-header">
+                    <div class="pf-row pf-brand-row">
+                        <img class="pf-brand-logo" src="assets/images/logo.png" alt="PineFetch Link Dump logo" />
+                        <div class="pf-panel-heading">
+                            <h1 class="pf-title" id="pfPopupTitle">PineFetch Link Dump</h1>
+                        </div>
+                    </div>
+                    <span class="pf-badge pf-badge-muted" id="pfStateBadge">Idle</span>
+                </header>
+
+                <div class="pf-stack-sm" aria-label="Settings">
+                    <label class="pf-field" for="pfEndpointInput">
+                        <span class="pf-label">PineFetch Endpoint</span>
+                        <input
+                            class="pf-input"
+                            id="pfEndpointInput"
+                            type="url"
+                            spellcheck="false"
+                            autocomplete="off"
+                            inputmode="url"
+                            value="http://127.0.1:2255"
+                        />
+                    </label>
+
+                    <label class="pf-field" for="pfSecretInput">
+                        <span class="pf-label">PineFetch Secret</span>
+                        <input
+                            class="pf-input"
+                            id="pfSecretInput"
+                            type="password"
+                            spellcheck="false"
+                            autocomplete="off"
+                        />
+                    </label>
+                </div>
+
+                <section class="pf-panel-soft pf-stack-sm" aria-labelledby="pfPreviewTitle">
+                    <header class="pf-toolbar" style="flex-direction: row">
+                        <span class="pf-badge pf-badge-muted" id="pfPreviewMode">No YouTube page</span>
+                        <span class="pf-text">Links: <span id="pfPreviewCount">0</span></span>
+                    </header>
+
+                    <div class="pf-stack-sm pf-scroll-area" id="pfPreviewLinks" aria-live="polite">
+                        <p class="pf-status">No links found.</p>
+                    </div>
+                </section>
+
+                <div class="pf-row pf-action-row" aria-label="Actions">
+                    <button class="pf-btn pf-btn-primary pf-grow" id="pfSendButton" type="button">
+                        Send to PineFetch
+                    </button>
+                    <button class="pf-btn pf-btn-ghost pf-grow" id="pfExportButton" type="button">Export TXT</button>
+                </div>
+
+                <footer class="pf-row pf-footer-row">
+                    <p class="pf-status pf-grow" id="pfStatusMessage" role="status" aria-live="polite">Ready.</p>
+                    <span class="pf-status pf-version-label" id="pfVersionLabel" aria-label="Extension version"></span>
+                </footer>
+            </section>
+        </main>
+
+        <script src="popup.js" defer></script>
+    </body>
+</html>
