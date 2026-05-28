@@ -33,8 +33,8 @@ Payload für ein einzelnes Video:
 
 ```json
 {
-  "url": "https://www.youtube.com/watch?v=...",
-  "secret": "..."
+    "url": "https://www.youtube.com/watch?v=...",
+    "secret": "..."
 }
 ```
 
@@ -42,10 +42,8 @@ Payload für mehrere Videos:
 
 ```json
 {
-  "urls": [
-    "https://www.youtube.com/watch?v=..."
-  ],
-  "secret": "..."
+    "urls": ["https://www.youtube.com/watch?v=..."],
+    "secret": "..."
 }
 ```
 
@@ -63,25 +61,3 @@ Channel-/Listen-Seite:
 2. Falls mehr Links gebraucht werden, auf YouTube weiter nach unten scrollen.
 3. Extension öffnen.
 4. "Send to PineFetch" oder "Export TXT" klicken.
-
-## Designsystem
-
-Die UI nutzt das PineFetch Designsystem.
-
-Quelle:
-https://github.com/oliverjessner/PineFetch-Designsystem
-
-Relevante Anleitung:
-https://github.com/oliverjessner/PineFetch-Designsystem/blob/main/ai-guide.md
-
-Die CSS-Datei ist lokal in die Extension eingebunden:
-
-```txt
-vendor/pinefetch.min.css
-```
-
-Das Extension- und Popup-Logo ist lokal eingebunden:
-
-```txt
-assets/images/logo.png
-```
