@@ -1,6 +1,6 @@
 {
     "name": "pinefetch-link-dump",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "The companion app for PineFetch to make downloading videos easier",
     "homepage": "https://github.com/oliverjessner/PineFetch-Link-Dump#readme",
     "bugs": {
@@ -15,9 +15,9 @@
     "type": "commonjs",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "import:css": "cp node_modules/pinefetch-designsystem/dist/pinefetch.css vendor/"
     },
     "dependencies": {
-        "pinefetch-designsystem": "^0.0.3"
+        "pinefetch-designsystem": "^0.1.0"
     }
 }

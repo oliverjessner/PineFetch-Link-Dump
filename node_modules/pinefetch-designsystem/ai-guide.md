@@ -125,6 +125,8 @@ Utilities:
 
 The source CSS centralizes design values in `:root` tokens. Component rules should reuse `--pf-` variables for colors, spacing, radii, sizing, typography, shadows, and motion values instead of hardcoded literals.
 
+Typography uses two font tokens: `--pf-font-mono` for the PineFetch shell, headings, labels, and copy, and `--pf-font-control` for buttons and form controls. Keep controls on `--pf-font-control` so they retain the smoother native OS button/input look.
+
 Use these variables instead of hardcoded colors:
 
 ```css

@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>PineFetch Link Dump</title>
         <link rel="icon" href="assets/images/logo.png" type="image/png" />
-        <link rel="stylesheet" href="vendor/pinefetch.min.css" />
+        <link rel="stylesheet" href="vendor/pinefetch.css" />
         <style>
             html,
             body {
@@ -85,17 +85,21 @@
             <section class="pf-panel" aria-labelledby="pfPopupTitle">
                 <header class="pf-panel-header pf-popup-header">
                     <div class="pf-row pf-brand-row">
-                        <img class="pf-brand-logo" src="assets/images/logo.png" alt="PineFetch Link Dump logo" />
+                        <img
+                            class="pf-brand-logo pf-non-select"
+                            src="assets/images/logo.png"
+                            alt="PineFetch Link Dump logo"
+                        />
                         <div class="pf-panel-heading">
-                            <h1 class="pf-title" id="pfPopupTitle">PineFetch Link Dump</h1>
+                            <h1 class="pf-title pf-non-select" id="pfPopupTitle">PineFetch Link Dump</h1>
                         </div>
                     </div>
-                    <span class="pf-badge pf-badge-muted" id="pfStateBadge">Idle</span>
+                    <span class="pf-badge pf-badge-muted pf-non-select" id="pfStateBadge">Idle</span>
                 </header>
 
                 <div class="pf-stack-sm" aria-label="Settings">
                     <label class="pf-field" for="pfEndpointInput">
-                        <span class="pf-label">PineFetch Endpoint</span>
+                        <span class="pf-label pf-non-select">PineFetch Endpoint</span>
                         <input
                             class="pf-input"
                             id="pfEndpointInput"
@@ -108,7 +112,7 @@
                     </label>
 
                     <label class="pf-field" for="pfSecretInput">
-                        <span class="pf-label">PineFetch Secret</span>
+                        <span class="pf-label pf-non-select">PineFetch Secret</span>
                         <input
                             class="pf-input"
                             id="pfSecretInput"
@@ -121,8 +125,8 @@
 
                 <section class="pf-panel-soft pf-stack-sm" aria-labelledby="pfPreviewTitle">
                     <header class="pf-toolbar" style="flex-direction: row">
-                        <span class="pf-badge pf-badge-muted" id="pfPreviewMode">No YouTube page</span>
-                        <span class="pf-text">Links: <span id="pfPreviewCount">0</span></span>
+                        <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No YouTube page</span>
+                        <span class="pf-text pf-non-select">Links: <span id="pfPreviewCount">0</span></span>
                     </header>
 
                     <div class="pf-stack-sm pf-scroll-area" id="pfPreviewLinks" aria-live="polite">
@@ -131,13 +135,15 @@
                 </section>
 
                 <div class="pf-row pf-action-row" aria-label="Actions">
-                    <button class="pf-btn pf-btn-primary pf-grow" id="pfSendButton" type="button">
+                    <button class="pf-btn pf-btn-primary pf-grow pf-non-select" id="pfSendButton" type="button">
                         Send to PineFetch
                     </button>
-                    <button class="pf-btn pf-btn-ghost pf-grow" id="pfExportButton" type="button">Export TXT</button>
+                    <button class="pf-btn pf-btn-ghost pf-grow pf-non-select" id="pfExportButton" type="button">
+                        Export TXT
+                    </button>
                 </div>
 
-                <footer class="pf-row pf-footer-row">
+                <footer class="pf-row pf-footer-row pf-non-select">
                     <p class="pf-status pf-grow" id="pfStatusMessage" role="status" aria-live="polite">Ready.</p>
                     <span class="pf-status pf-version-label" id="pfVersionLabel" aria-label="Extension version"></span>
                 </footer>
