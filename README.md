@@ -1,35 +1,31 @@
 # PineFetch Link Dump
 
-## Was ist PineFetch YouTube Connector?
-
-Die Extension erkennt YouTube-Video-Links auf der aktuellen YouTube-Seite und kann sie entweder als TXT exportieren oder direkt an eine lokale PineFetch-Instanz senden.
+This extension detects YouTube video links on the current YouTube page and can either export them as a TXT file or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
 
 ## Installation
 
-1. Chrome öffnen.
-2. `chrome://extensions` öffnen.
-3. Developer Mode aktivieren.
-4. "Load unpacked" klicken.
-5. Den Extension-Ordner auswählen.
+1. Open Chrome.
+2. Open `chrome://extensions`.
+3. Enable Developer Mode.
+4. Click "Load unpacked".
+5. Select the extension folder.
 
-## PineFetch konfigurieren
+## Configure PineFetch
 
-PineFetch muss lokal laufen. Der Standard-Endpoint ist:
+[PineFetch](https://oliverjessner.at/pinefetch/) must be running locally. The default endpoint is:
 
 ```txt
 http://127.0.1:2255
 ```
 
-Das Secret in der Extension muss mit dem PineFetch-Secret übereinstimmen. Alternativ können auch `http://127.0.0.1:2255` oder `http://localhost:2255` als Endpoint eingetragen werden.
-
-## Verwendete Endpoints
+## Used Endpoints
 
 ```txt
 POST /addYoutubeLinkToQueue/
 POST /addYoutubeLinksToQueue/
 ```
 
-Payload für ein einzelnes Video:
+Payload for a single video:
 
 ```json
 {
@@ -38,7 +34,7 @@ Payload für ein einzelnes Video:
 }
 ```
 
-Payload für mehrere Videos:
+Payload for multiple videos:
 
 ```json
 {
@@ -47,20 +43,20 @@ Payload für mehrere Videos:
 }
 ```
 
-## Nutzung
+## Usage
 
-Einzelvideo:
+Single video:
 
-1. YouTube-Video öffnen.
-2. Extension öffnen.
-3. "Send to PineFetch" klicken.
+1. Open a YouTube video.
+2. Open the extension.
+3. Click "Send to PineFetch".
 
-Channel-/Listen-Seite:
+Channel/list page:
 
-1. YouTube-Channel-Tab öffnen, zum Beispiel `/streams`, `/videos` oder `/shorts`.
-2. Falls mehr Links gebraucht werden, auf YouTube weiter nach unten scrollen.
-3. Extension öffnen.
-4. "Send to PineFetch" oder "Export TXT" klicken.
+1. Open a YouTube channel tab, for example `/streams`, `/videos`, or `/shorts`.
+2. If you need more links, scroll further down on YouTube.
+3. Open the extension.
+4. Click "Send to PineFetch" or "Export TXT".
 
 ## Look and feel
 
