@@ -61,3 +61,7 @@ Channel-/Listen-Seite:
 2. Falls mehr Links gebraucht werden, auf YouTube weiter nach unten scrollen.
 3. Extension öffnen.
 4. "Send to PineFetch" oder "Export TXT" klicken.
+
+## Look and feel
+
+![](/assets/images/example.webp)
