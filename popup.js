@@ -367,7 +367,16 @@ function shortenUrl(url) {
     return `${url.slice(0, 44)}...${url.slice(-20)}`;
 }
 
-function collectYoutubePageInfo() {
+async function collectYoutubePageInfo() {
+    const VIDEO_ELEMENT_POLL_ATTEMPTS = 12;
+    const VIDEO_ELEMENT_POLL_INTERVAL_MS = 250;
+
+    function wait(ms) {
+        return new Promise(resolve => {
+            window.setTimeout(resolve, ms);
+        });
+    }
+
     function isYoutubeTabUrl(url) {
         try {
             const parsed = new URL(url);
@@ -451,6 +460,52 @@ function collectYoutubePageInfo() {
             .filter(Boolean);
 
         return uniquePreserveOrder(urls);
+    }
+
+    function normalizeVideoElementUrl(url) {
+        try {
+            const value = String(url || '').trim();
+
+            if (!value) {
+                return null;
+            }
+
+            const parsed = new URL(value, window.location.href);
+
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                return null;
+            }
+
+            return parsed.href;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function extractVideoElementUrl() {
+        const video = document.querySelector('video');
+
+        if (!video) {
+            return null;
+        }
+
+        return normalizeVideoElementUrl(video.src);
+    }
+
+    async function extractVideoElementUrlWithRetry() {
+        for (let attempt = 0; attempt < VIDEO_ELEMENT_POLL_ATTEMPTS; attempt += 1) {
+            const videoElementUrl = extractVideoElementUrl();
+
+            if (videoElementUrl) {
+                return videoElementUrl;
+            }
+
+            if (attempt < VIDEO_ELEMENT_POLL_ATTEMPTS - 1) {
+                await wait(VIDEO_ELEMENT_POLL_INTERVAL_MS);
+            }
+        }
+
+        return null;
     }
 
     function cleanYoutubeTitle(value) {
@@ -543,9 +598,24 @@ function collectYoutubePageInfo() {
 
     const pageUrl = window.location.href;
     const singleUrl = normalizeSingleYoutubeVideoUrl(pageUrl);
-    const mode = singleUrl ? 'single' : 'list';
-    const urls = singleUrl ? [singleUrl] : extractYoutubeLinksFromAnchors();
-    const finalMode = singleUrl ? mode : urls.length ? 'list' : 'unknown';
+    const videoElementUrl = await extractVideoElementUrlWithRetry();
+    let mode = 'unknown';
+    let urls = [];
+
+    if (singleUrl) {
+        mode = 'single';
+        urls = [videoElementUrl || singleUrl];
+    } else {
+        urls = extractYoutubeLinksFromAnchors();
+        mode = urls.length ? 'list' : 'unknown';
+
+        if (!urls.length && videoElementUrl) {
+            mode = 'single';
+            urls = [videoElementUrl];
+        }
+    }
+
+    const finalMode = urls.length ? mode : 'unknown';
     const title = singleUrl
         ? getVideoTitle()
         : cleanYoutubeTitle(readMetaContent('meta[property="og:title"]') || document.title);

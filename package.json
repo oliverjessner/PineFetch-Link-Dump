@@ -1,6 +1,6 @@
 {
     "name": "pinefetch-link-dump",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "The companion app for PineFetch to make downloading videos easier",
     "homepage": "https://github.com/oliverjessner/PineFetch-Link-Dump#readme",
     "bugs": {
