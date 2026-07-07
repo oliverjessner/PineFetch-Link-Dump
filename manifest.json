@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "PineFetch Link Dump",
-    "version": "0.0.4",
+    "version": "0.1.0",
     "description": "Export YouTube links from the current tab or send them to a local PineFetch instance.",
     "icons": {
         "16": "assets/images/logo.png",

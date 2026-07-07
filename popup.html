@@ -78,6 +78,19 @@
                 flex: 0 0 auto;
                 text-align: right;
             }
+
+            .pf-copy-badge {
+                cursor: pointer;
+            }
+
+            .pf-copy-badge[aria-disabled='true'] {
+                cursor: default;
+            }
+
+            .pf-copy-badge:focus-visible {
+                outline: 2px solid currentColor;
+                outline-offset: 2px;
+            }
         </style>
     </head>
     <body>
@@ -125,7 +138,7 @@
 
                 <section class="pf-panel-soft pf-stack-sm" aria-labelledby="pfPreviewTitle">
                     <header class="pf-toolbar" style="flex-direction: row">
-                        <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No YouTube page</span>
+                        <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No links</span>
                         <span class="pf-text pf-non-select">Links: <span id="pfPreviewCount">0</span></span>
                     </header>
 

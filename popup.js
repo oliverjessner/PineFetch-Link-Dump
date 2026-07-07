@@ -50,6 +50,8 @@ function bindEvents() {
     elements.secretInput.addEventListener('change', persistCurrentSettings);
     elements.sendButton.addEventListener('click', handleSendClick);
     elements.exportButton.addEventListener('click', handleExportClick);
+    elements.previewMode.addEventListener('click', handlePreviewModeCopyClick);
+    elements.previewMode.addEventListener('keydown', handlePreviewModeCopyKeydown);
 }
 
 function scheduleSettingsSave() {
@@ -98,6 +100,62 @@ async function handleExportClick() {
         await exportTxt(pageInfo);
     } finally {
         setLoading(false);
+    }
+}
+
+async function handlePreviewModeCopyClick() {
+    await copyCurrentPreviewLinks();
+}
+
+async function handlePreviewModeCopyKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+    }
+
+    event.preventDefault();
+    await copyCurrentPreviewLinks();
+}
+
+async function copyCurrentPreviewLinks() {
+    const urls = uniquePreserveOrder(currentPageInfo?.urls || []);
+
+    if (!urls.length) {
+        setStatus('No links to copy.', 'warning');
+        return;
+    }
+
+    try {
+        await writeTextToClipboard(urls.join('\n'));
+        setStatus(`Copied ${urls.length} ${urls.length === 1 ? 'link' : 'links'} to clipboard.`, 'success');
+    } catch (error) {
+        setStatus('Copy failed.', 'error');
+    }
+}
+
+async function writeTextToClipboard(text) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch (error) {
+            // Fall back to the textarea copy path below.
+        }
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.append(textarea);
+    textarea.select();
+
+    try {
+        if (!document.execCommand('copy')) {
+            throw new Error('Clipboard copy failed');
+        }
+    } finally {
+        textarea.remove();
     }
 }
 
@@ -192,13 +250,13 @@ async function getActiveTab() {
 async function analyzeCurrentTab() {
     const tab = await getActiveTab();
 
-    if (!tab || !tab.id || !isYoutubeTabUrl(tab.url)) {
+    if (!tab || !tab.id) {
         const pageInfo = createEmptyPageInfo(tab);
         renderPageInfo(pageInfo);
 
         if (!isLoading) {
             setBadge('Idle', 'muted');
-            setStatus('No YouTube tab detected.', 'warning');
+            setStatus('No tab detected.', 'warning');
         }
 
         currentPageInfo = pageInfo;
@@ -315,13 +373,27 @@ function setAnalysisState(pageInfo) {
     }
 
     setBadge('Idle', 'muted');
-    setStatus('No YouTube tab detected.', 'warning');
+    setStatus('No links found.', 'warning');
 }
 
 function renderPageInfo(pageInfo) {
     const modeLabel = getModeLabel(pageInfo);
     elements.previewMode.textContent = modeLabel;
-    elements.previewMode.className = 'pf-badge pf-non-select';
+    elements.previewMode.className = 'pf-badge pf-non-select pf-copy-badge';
+    elements.previewMode.setAttribute('aria-disabled', String(!pageInfo.urls.length));
+    elements.previewMode.tabIndex = pageInfo.urls.length ? 0 : -1;
+    elements.previewMode.title = pageInfo.urls.length ? 'Copy links to clipboard' : 'No links to copy';
+
+    if (pageInfo.urls.length) {
+        elements.previewMode.setAttribute('role', 'button');
+        elements.previewMode.setAttribute(
+            'aria-label',
+            `Copy ${pageInfo.urls.length} ${pageInfo.urls.length === 1 ? 'link' : 'links'} to clipboard`,
+        );
+    } else {
+        elements.previewMode.removeAttribute('role');
+        elements.previewMode.removeAttribute('aria-label');
+    }
 
     if (pageInfo.mode === 'unknown') {
         elements.previewMode.classList.add('pf-badge-muted');
@@ -356,7 +428,7 @@ function getModeLabel(pageInfo) {
         return 'Link list';
     }
 
-    return 'No YouTube page';
+    return 'No links';
 }
 
 function shortenUrl(url) {
@@ -380,7 +452,7 @@ async function collectYoutubePageInfo() {
     function isYoutubeTabUrl(url) {
         try {
             const parsed = new URL(url);
-            return parsed.hostname === 'www.youtube.com' || parsed.hostname === 'youtu.be';
+            return parsed.hostname === 'youtu.be' || parsed.hostname === 'youtube.com' || parsed.hostname.endsWith('.youtube.com');
         } catch (error) {
             return false;
         }
@@ -483,13 +555,26 @@ async function collectYoutubePageInfo() {
     }
 
     function extractVideoElementUrl() {
-        const video = document.querySelector('video');
+        const videos = document.querySelectorAll('video');
 
-        if (!video) {
-            return null;
+        for (const video of videos) {
+            const candidates = [
+                video.currentSrc,
+                video.src,
+                video.getAttribute('src'),
+                ...Array.from(video.querySelectorAll('source')).map(source => source.src || source.getAttribute('src')),
+            ];
+
+            for (const candidate of candidates) {
+                const normalizedUrl = normalizeVideoElementUrl(candidate);
+
+                if (normalizedUrl) {
+                    return normalizedUrl;
+                }
+            }
         }
 
-        return normalizeVideoElementUrl(video.src);
+        return null;
     }
 
     async function extractVideoElementUrlWithRetry() {
@@ -597,22 +682,21 @@ async function collectYoutubePageInfo() {
     }
 
     const pageUrl = window.location.href;
+    const isYoutubePage = isYoutubeTabUrl(pageUrl);
     const singleUrl = normalizeSingleYoutubeVideoUrl(pageUrl);
-    const videoElementUrl = await extractVideoElementUrlWithRetry();
+    const videoElementUrl = isYoutubePage ? null : await extractVideoElementUrlWithRetry();
     let mode = 'unknown';
     let urls = [];
 
     if (singleUrl) {
         mode = 'single';
-        urls = [videoElementUrl || singleUrl];
+        urls = [singleUrl];
+    } else if (!isYoutubePage && videoElementUrl) {
+        mode = 'single';
+        urls = [videoElementUrl];
     } else {
         urls = extractYoutubeLinksFromAnchors();
         mode = urls.length ? 'list' : 'unknown';
-
-        if (!urls.length && videoElementUrl) {
-            mode = 'single';
-            urls = [videoElementUrl];
-        }
     }
 
     const finalMode = urls.length ? mode : 'unknown';
@@ -785,7 +869,7 @@ async function sendToPineFetch(pageInfo) {
 
     if (!urls.length) {
         setBadge('Error', 'danger');
-        setStatus('No YouTube links found.', 'error');
+        setStatus('No links found.', 'error');
         return;
     }
 
@@ -914,7 +998,7 @@ function buildPineFetchRequestUrl(endpointBase, path) {
 function isYoutubeTabUrl(url) {
     try {
         const parsed = new URL(url);
-        return parsed.hostname === 'www.youtube.com' || parsed.hostname === 'youtu.be';
+        return parsed.hostname === 'youtu.be' || parsed.hostname === 'youtube.com' || parsed.hostname.endsWith('.youtube.com');
     } catch (error) {
         return false;
     }
