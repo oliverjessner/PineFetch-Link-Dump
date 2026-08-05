@@ -1,17 +1,14 @@
 'use strict';
 
 const DEFAULT_ENDPOINT_BASE = 'http://127.0.1:2255';
+// PineFetch currently exposes these legacy endpoint names for every yt-dlp compatible URL.
 const SINGLE_LINK_PATH = '/addYoutubeLinkToQueue/';
 const MULTI_LINK_PATH = '/addYoutubeLinksToQueue/';
-const STORAGE_DEFAULTS = {
-    endpointBase: DEFAULT_ENDPOINT_BASE,
-    secret: '',
-};
+const STORAGE_DEFAULTS = { endpointBase: DEFAULT_ENDPOINT_BASE, secret: '' };
 
 let currentPageInfo = null;
 let isLoading = false;
 let saveSettingsTimer = null;
-
 const elements = {};
 
 document.addEventListener('DOMContentLoaded', initPopup);
@@ -26,7 +23,6 @@ async function initPopup() {
     const settings = await getStoredSettings();
     elements.endpointInput.value = settings.endpointBase || DEFAULT_ENDPOINT_BASE;
     elements.secretInput.value = settings.secret || '';
-
     currentPageInfo = await analyzeCurrentTab();
 }
 
@@ -50,7 +46,7 @@ function bindEvents() {
     elements.secretInput.addEventListener('change', persistCurrentSettings);
     elements.sendButton.addEventListener('click', handleSendClick);
     elements.exportButton.addEventListener('click', handleExportClick);
-    elements.previewMode.addEventListener('click', handlePreviewModeCopyClick);
+    elements.previewMode.addEventListener('click', copyCurrentPreviewLinks);
     elements.previewMode.addEventListener('keydown', handlePreviewModeCopyKeydown);
 }
 
@@ -73,8 +69,7 @@ async function handleSendClick() {
 
     try {
         await persistCurrentSettings();
-        const pageInfo = await analyzeCurrentTab();
-        await sendToPineFetch(pageInfo);
+        await sendToPineFetch(await analyzeCurrentTab());
     } finally {
         setLoading(false);
     }
@@ -88,11 +83,7 @@ async function handleExportClick() {
         const pageInfo = await analyzeCurrentTab();
 
         if (!pageInfo.urls.length) {
-            if (isYoutubeTabUrl(pageInfo.pageUrl)) {
-                setStatus('No YouTube links found.', 'error');
-            } else {
-                setStatus('No links found.', 'error');
-            }
+            setStatus(`No ${pageInfo.providerLabel} links found.`, 'error');
             setBadge('Error', 'danger');
             return;
         }
@@ -103,15 +94,8 @@ async function handleExportClick() {
     }
 }
 
-async function handlePreviewModeCopyClick() {
-    await copyCurrentPreviewLinks();
-}
-
 async function handlePreviewModeCopyKeydown(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') {
-        return;
-    }
-
+    if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     await copyCurrentPreviewLinks();
 }
@@ -133,7 +117,7 @@ async function copyCurrentPreviewLinks() {
 }
 
 async function writeTextToClipboard(text) {
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    if (navigator.clipboard?.writeText) {
         try {
             await navigator.clipboard.writeText(text);
             return;
@@ -151,9 +135,7 @@ async function writeTextToClipboard(text) {
     textarea.select();
 
     try {
-        if (!document.execCommand('copy')) {
-            throw new Error('Clipboard copy failed');
-        }
+        if (!document.execCommand('copy')) throw new Error('Clipboard copy failed');
     } finally {
         textarea.remove();
     }
@@ -162,35 +144,13 @@ async function writeTextToClipboard(text) {
 function setStatus(message, type = 'default') {
     elements.statusMessage.textContent = message;
     elements.statusMessage.className = 'pf-status';
-
-    if (type === 'success') {
-        elements.statusMessage.classList.add('pf-status-success');
-    }
-
-    if (type === 'error') {
-        elements.statusMessage.classList.add('pf-status-error');
-    }
-
-    if (type === 'warning') {
-        elements.statusMessage.classList.add('pf-status-warning');
-    }
+    if (type !== 'default') elements.statusMessage.classList.add(`pf-status-${type}`);
 }
 
 function setBadge(label, type = 'default') {
     elements.stateBadge.textContent = label;
     elements.stateBadge.className = 'pf-badge pf-non-select';
-
-    if (type === 'muted') {
-        elements.stateBadge.classList.add('pf-badge-muted');
-    }
-
-    if (type === 'warning') {
-        elements.stateBadge.classList.add('pf-badge-warning');
-    }
-
-    if (type === 'danger') {
-        elements.stateBadge.classList.add('pf-badge-danger');
-    }
+    if (type !== 'default') elements.stateBadge.classList.add(`pf-badge-${type}`);
 }
 
 function setLoading(loading) {
@@ -208,50 +168,40 @@ function setVersionLabel(version) {
 
 async function loadPackageVersion() {
     try {
-        if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
-            const response = await fetch(chrome.runtime.getURL('package.json'), {
-                cache: 'no-store',
-            });
+        const response = await fetch(chrome.runtime.getURL('package.json'), { cache: 'no-store' });
 
-            if (response.ok) {
-                const packageData = await response.json();
-                const packageVersion = String(packageData.version || '').trim();
-
-                if (packageVersion) {
-                    return packageVersion;
-                }
-            }
+        if (response.ok) {
+            const version = String((await response.json()).version || '').trim();
+            if (version) return version;
         }
     } catch (error) {
-        // Fall back to the manifest version when package.json is not readable.
+        // Fall back to the manifest version below.
     }
 
     try {
-        if (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) {
-            return chrome.runtime.getManifest().version || '';
-        }
+        return chrome.runtime.getManifest().version || '';
     } catch (error) {
         return '';
     }
-
-    return '';
 }
 
 async function getActiveTab() {
     const tabs = await new Promise(resolve => {
-        chrome.tabs.query({ active: true, currentWindow: true }, result => {
-            resolve(result || []);
-        });
+        chrome.tabs.query({ active: true, currentWindow: true }, result => resolve(result || []));
     });
-
     return tabs[0] || null;
+}
+
+function getProviderForUrl(url) {
+    return (globalThis.PineFetchLinkProviders || []).find(provider => provider.matches(url)) || null;
 }
 
 async function analyzeCurrentTab() {
     const tab = await getActiveTab();
+    const provider = getProviderForUrl(tab?.url || '');
 
-    if (!tab || !tab.id) {
-        const pageInfo = createEmptyPageInfo(tab);
+    if (!tab || typeof tab.id !== 'number' || !provider) {
+        const pageInfo = createEmptyPageInfo(tab, provider);
         renderPageInfo(pageInfo);
 
         if (!isLoading) {
@@ -264,21 +214,21 @@ async function analyzeCurrentTab() {
     }
 
     try {
-        const results = await executePageAnalysis(tab.id);
-        const pageInfo = normalizePageInfo(results?.[0]?.result, tab);
+        const results = await executePageAnalysis(tab.id, provider.collectPageInfo);
+        const pageInfo = normalizePageInfo(results?.[0]?.result, tab, provider);
         renderPageInfo(pageInfo);
         setAnalysisState(pageInfo);
         currentPageInfo = pageInfo;
         return pageInfo;
     } catch (error) {
-        const pageInfo = createFallbackPageInfo(tab);
+        const pageInfo = normalizePageInfo(provider.createFallbackPageInfo(tab), tab, provider);
         renderPageInfo(pageInfo);
 
         if (pageInfo.urls.length) {
             setAnalysisState(pageInfo);
         } else {
             setBadge('Error', 'danger');
-            setStatus('No links found.', 'error');
+            setStatus(`No ${provider.label} links found.`, 'error');
         }
 
         currentPageInfo = pageInfo;
@@ -286,99 +236,66 @@ async function analyzeCurrentTab() {
     }
 }
 
-function executePageAnalysis(tabId) {
+function executePageAnalysis(tabId, collectPageInfo) {
     return new Promise((resolve, reject) => {
-        chrome.scripting.executeScript(
-            {
-                target: { tabId },
-                func: collectYoutubePageInfo,
-            },
-            results => {
-                const runtimeError = chrome.runtime.lastError;
+        chrome.scripting.executeScript({ target: { tabId }, func: collectPageInfo }, results => {
+            const runtimeError = chrome.runtime.lastError;
 
-                if (runtimeError) {
-                    reject(runtimeError);
-                    return;
-                }
+            if (runtimeError) {
+                reject(runtimeError);
+                return;
+            }
 
-                resolve(results || []);
-            },
-        );
+            resolve(results || []);
+        });
     });
 }
 
-function createEmptyPageInfo(tab) {
+function createEmptyPageInfo(tab, provider) {
     return {
+        provider: provider?.id || 'unknown',
+        providerLabel: provider?.label || 'video',
         mode: 'unknown',
         pageUrl: tab?.url || '',
         title: tab?.title || '',
-        channelName: '',
-        activeTabName: '',
+        ownerName: '',
+        collectionName: 'Videos',
         urls: [],
         count: 0,
     };
 }
 
-function createFallbackPageInfo(tab) {
-    const normalizedUrl = normalizeSingleYoutubeVideoUrl(tab.url || '');
-    const urls = normalizedUrl ? [normalizedUrl] : [];
-
-    return {
-        mode: urls.length ? 'single' : 'unknown',
-        pageUrl: tab.url || '',
-        title: cleanYoutubeTitle(tab.title || ''),
-        channelName: '',
-        activeTabName: '',
-        urls,
-        count: urls.length,
-    };
-}
-
-function normalizePageInfo(value, tab) {
+function normalizePageInfo(value, tab, provider) {
     const urls = uniquePreserveOrder(Array.isArray(value?.urls) ? value.urls : []);
-    const mode = value?.mode === 'single' || value?.mode === 'list' ? value.mode : 'unknown';
 
     return {
-        mode,
-        pageUrl: value?.pageUrl || tab.url || '',
-        title: cleanYoutubeTitle(value?.title || tab.title || ''),
-        channelName: value?.channelName || '',
-        activeTabName: value?.activeTabName || '',
+        provider: value?.provider || provider.id,
+        providerLabel: value?.providerLabel || provider.label,
+        mode: urls.length && (value?.mode === 'single' || value?.mode === 'list') ? value.mode : 'unknown',
+        pageUrl: value?.pageUrl || tab?.url || '',
+        title: String(value?.title || tab?.title || '').trim(),
+        ownerName: String(value?.ownerName || '').trim(),
+        collectionName: String(value?.collectionName || 'Videos').trim(),
         urls,
         count: urls.length,
     };
 }
 
 function setAnalysisState(pageInfo) {
-    if (isLoading) {
-        return;
-    }
+    if (isLoading) return;
 
-    if (pageInfo.mode === 'single' && pageInfo.urls.length === 1) {
-        setBadge('Video');
+    if ((pageInfo.mode === 'single' || pageInfo.mode === 'list') && pageInfo.urls.length) {
+        setBadge(pageInfo.providerLabel);
         setStatus('Ready.', 'success');
         return;
     }
 
-    if (pageInfo.mode === 'list' && pageInfo.urls.length > 0) {
-        setBadge('List');
-        setStatus('Ready.', 'success');
-        return;
-    }
-
-    if (isYoutubeTabUrl(pageInfo.pageUrl)) {
-        setBadge('Ready', 'warning');
-        setStatus('No YouTube links found. Scroll the page to load more videos.', 'warning');
-        return;
-    }
-
-    setBadge('Idle', 'muted');
-    setStatus('No links found.', 'warning');
+    setBadge('Ready', 'warning');
+    setStatus(`No ${pageInfo.providerLabel} links found. Scroll the page to load more videos.`, 'warning');
 }
 
 function renderPageInfo(pageInfo) {
-    const modeLabel = getModeLabel(pageInfo);
-    elements.previewMode.textContent = modeLabel;
+    elements.previewMode.textContent = getModeLabel(pageInfo);
     elements.previewMode.className = 'pf-badge pf-non-select pf-copy-badge';
     elements.previewMode.setAttribute('aria-disabled', String(!pageInfo.urls.length));
     elements.previewMode.tabIndex = pageInfo.urls.length ? 0 : -1;
@@ -393,9 +310,6 @@ function renderPageInfo(pageInfo) {
     } else {
         elements.previewMode.removeAttribute('role');
         elements.previewMode.removeAttribute('aria-label');
-    }
-
-    if (pageInfo.mode === 'unknown') {
         elements.previewMode.classList.add('pf-badge-muted');
     }
 
@@ -420,368 +334,17 @@ function renderPageInfo(pageInfo) {
 }
 
 function getModeLabel(pageInfo) {
-    if (pageInfo.mode === 'single') {
-        return 'Single video';
-    }
-
-    if (pageInfo.mode === 'list') {
-        return 'Link list';
-    }
-
+    if (pageInfo.mode === 'single') return `${pageInfo.providerLabel} video`;
+    if (pageInfo.mode === 'list') return `${pageInfo.providerLabel} list`;
     return 'No links';
 }
 
 function shortenUrl(url) {
-    if (url.length <= 72) {
-        return url;
-    }
-
-    return `${url.slice(0, 44)}...${url.slice(-20)}`;
-}
-
-async function collectYoutubePageInfo() {
-    const VIDEO_ELEMENT_POLL_ATTEMPTS = 12;
-    const VIDEO_ELEMENT_POLL_INTERVAL_MS = 250;
-
-    function wait(ms) {
-        return new Promise(resolve => {
-            window.setTimeout(resolve, ms);
-        });
-    }
-
-    function isYoutubeTabUrl(url) {
-        try {
-            const parsed = new URL(url);
-            return parsed.hostname === 'youtu.be' || parsed.hostname === 'youtube.com' || parsed.hostname.endsWith('.youtube.com');
-        } catch (error) {
-            return false;
-        }
-    }
-
-    function isSingleYoutubeVideoUrl(url) {
-        return Boolean(normalizeSingleYoutubeVideoUrl(url));
-    }
-
-    function normalizeYoutubeUrl(url) {
-        try {
-            const parsed = new URL(url, window.location.origin);
-            const host = parsed.hostname.replace(/^m\./, 'www.');
-            let videoId = '';
-
-            if (host === 'youtu.be') {
-                videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
-            }
-
-            if (host === 'www.youtube.com' || host === 'youtube.com') {
-                if (parsed.pathname === '/watch') {
-                    videoId = parsed.searchParams.get('v') || '';
-                } else {
-                    const match = parsed.pathname.match(/^\/(?:shorts|live)\/([^/?#]+)/);
-                    videoId = match?.[1] || '';
-                }
-            }
-
-            if (!videoId) {
-                return null;
-            }
-
-            return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    function normalizeSingleYoutubeVideoUrl(url) {
-        if (!isYoutubeTabUrl(url)) {
-            return null;
-        }
-
-        return normalizeYoutubeUrl(url);
-    }
-
-    function uniquePreserveOrder(values) {
-        const seen = new Set();
-        const uniqueValues = [];
-
-        for (const value of values) {
-            if (!value || seen.has(value)) {
-                continue;
-            }
-
-            seen.add(value);
-            uniqueValues.push(value);
-        }
-
-        return uniqueValues;
-    }
-
-    function extractYoutubeLinksFromAnchors() {
-        const selectors = [
-            'ytd-rich-item-renderer a',
-            'ytd-grid-video-renderer a',
-            'ytd-video-renderer a',
-            "a.yt-simple-endpoint[href*='/watch']",
-            "a.yt-simple-endpoint[href*='/shorts/']",
-            "a.yt-simple-endpoint[href*='/live/']",
-            'a#thumbnail',
-        ];
-        const anchors = document.querySelectorAll(selectors.join(','));
-        const urls = Array.from(anchors)
-            .map(anchor => anchor.href || anchor.getAttribute('href') || '')
-            .map(normalizeYoutubeUrl)
-            .filter(Boolean);
-
-        return uniquePreserveOrder(urls);
-    }
-
-    function normalizeVideoElementUrl(url) {
-        try {
-            const value = String(url || '').trim();
-
-            if (!value) {
-                return null;
-            }
-
-            const parsed = new URL(value, window.location.href);
-
-            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-                return null;
-            }
-
-            return parsed.href;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    function extractVideoElementUrl() {
-        const videos = document.querySelectorAll('video');
-
-        for (const video of videos) {
-            const candidates = [
-                video.currentSrc,
-                video.src,
-                video.getAttribute('src'),
-                ...Array.from(video.querySelectorAll('source')).map(source => source.src || source.getAttribute('src')),
-            ];
-
-            for (const candidate of candidates) {
-                const normalizedUrl = normalizeVideoElementUrl(candidate);
-
-                if (normalizedUrl) {
-                    return normalizedUrl;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    async function extractVideoElementUrlWithRetry() {
-        for (let attempt = 0; attempt < VIDEO_ELEMENT_POLL_ATTEMPTS; attempt += 1) {
-            const videoElementUrl = extractVideoElementUrl();
-
-            if (videoElementUrl) {
-                return videoElementUrl;
-            }
-
-            if (attempt < VIDEO_ELEMENT_POLL_ATTEMPTS - 1) {
-                await wait(VIDEO_ELEMENT_POLL_INTERVAL_MS);
-            }
-        }
-
-        return null;
-    }
-
-    function cleanYoutubeTitle(value) {
-        return String(value || '')
-            .replace(/\s+-\s+YouTube\s*$/i, '')
-            .replace(/\s*-\s*YouTube\s*$/i, '')
-            .trim();
-    }
-
-    function readMetaContent(selector) {
-        return document.querySelector(selector)?.getAttribute('content')?.trim() || '';
-    }
-
-    function readFirstText(selectors) {
-        for (const selector of selectors) {
-            const text = document.querySelector(selector)?.textContent?.trim();
-
-            if (text) {
-                return text;
-            }
-        }
-
-        return '';
-    }
-
-    function getVideoTitle() {
-        return cleanYoutubeTitle(
-            readFirstText([
-                'h1.ytd-watch-metadata yt-formatted-string',
-                'h1.title yt-formatted-string',
-                'h1 yt-formatted-string',
-                'h1',
-            ]) ||
-                readMetaContent('meta[property="og:title"]') ||
-                document.title,
-        );
-    }
-
-    function getActiveTabName(pageUrl) {
-        const selectedTabName = document
-            .querySelector('yt-tab-shape[aria-selected="true"] .ytTabShapeTab')
-            ?.textContent?.trim();
-
-        if (selectedTabName) {
-            return selectedTabName;
-        }
-
-        try {
-            const parsed = new URL(pageUrl);
-            const lastSegment = parsed.pathname.split('/').filter(Boolean).pop() || '';
-            const tabNames = {
-                streams: 'Streams',
-                videos: 'Videos',
-                shorts: 'Shorts',
-                live: 'Live',
-            };
-
-            return tabNames[lastSegment] || '';
-        } catch (error) {
-            return '';
-        }
-    }
-
-    function getHandleFromUrl(pageUrl) {
-        try {
-            const parsed = new URL(pageUrl);
-            const handle = parsed.pathname.split('/').find(segment => segment.startsWith('@'));
-            return handle ? handle.replace(/^@/, '') : '';
-        } catch (error) {
-            return '';
-        }
-    }
-
-    function getChannelName(pageUrl) {
-        const visibleChannelName = readFirstText([
-            'ytd-channel-name #text',
-            '#channel-name #text',
-            '#owner #channel-name a',
-            'yt-page-header-renderer yt-dynamic-text-view-model h1',
-            'yt-page-header-renderer h1',
-            'ytd-c4-tabbed-header-renderer #channel-name',
-            'ytd-channel-header-renderer #channel-name',
-        ]);
-        const metaTitle = cleanYoutubeTitle(readMetaContent('meta[property="og:title"]'));
-        const pageTitle = cleanYoutubeTitle(document.title);
-        const handle = getHandleFromUrl(pageUrl);
-
-        return visibleChannelName || metaTitle || pageTitle || handle || 'youtube-channel';
-    }
-
-    const pageUrl = window.location.href;
-    const isYoutubePage = isYoutubeTabUrl(pageUrl);
-    const singleUrl = normalizeSingleYoutubeVideoUrl(pageUrl);
-    const videoElementUrl = isYoutubePage ? null : await extractVideoElementUrlWithRetry();
-    let mode = 'unknown';
-    let urls = [];
-
-    if (singleUrl) {
-        mode = 'single';
-        urls = [singleUrl];
-    } else if (!isYoutubePage && videoElementUrl) {
-        mode = 'single';
-        urls = [videoElementUrl];
-    } else {
-        urls = extractYoutubeLinksFromAnchors();
-        mode = urls.length ? 'list' : 'unknown';
-    }
-
-    const finalMode = urls.length ? mode : 'unknown';
-    const title = singleUrl
-        ? getVideoTitle()
-        : cleanYoutubeTitle(readMetaContent('meta[property="og:title"]') || document.title);
-
-    return {
-        mode: finalMode,
-        pageUrl,
-        title,
-        channelName: getChannelName(pageUrl),
-        activeTabName: getActiveTabName(pageUrl),
-        urls,
-        count: urls.length,
-    };
-}
-
-function isSingleYoutubeVideoUrl(url) {
-    return Boolean(normalizeSingleYoutubeVideoUrl(url));
-}
-
-function normalizeYoutubeUrl(url) {
-    try {
-        const parsed = new URL(url);
-        const host = parsed.hostname.replace(/^m\./, 'www.');
-        let videoId = '';
-
-        if (host === 'youtu.be') {
-            videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
-        }
-
-        if (host === 'www.youtube.com' || host === 'youtube.com') {
-            if (parsed.pathname === '/watch') {
-                videoId = parsed.searchParams.get('v') || '';
-            } else {
-                const match = parsed.pathname.match(/^\/(?:shorts|live)\/([^/?#]+)/);
-                videoId = match?.[1] || '';
-            }
-        }
-
-        if (!videoId) {
-            return null;
-        }
-
-        return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-    } catch (error) {
-        return null;
-    }
-}
-
-function normalizeSingleYoutubeVideoUrl(url) {
-    if (!isYoutubeTabUrl(url)) {
-        return null;
-    }
-
-    return normalizeYoutubeUrl(url);
-}
-
-function extractYoutubeLinksFromAnchors() {
-    const anchors = document.querySelectorAll(
-        'ytd-rich-item-renderer a, ytd-grid-video-renderer a, ytd-video-renderer a, a#thumbnail',
-    );
-    const urls = Array.from(anchors)
-        .map(anchor => anchor.href || anchor.getAttribute('href') || '')
-        .map(normalizeYoutubeUrl)
-        .filter(Boolean);
-
-    return uniquePreserveOrder(urls);
+    return url.length <= 72 ? url : `${url.slice(0, 44)}...${url.slice(-20)}`;
 }
 
 function uniquePreserveOrder(values) {
-    const seen = new Set();
-    const uniqueValues = [];
-
-    for (const value of values) {
-        if (!value || seen.has(value)) {
-            continue;
-        }
-
-        seen.add(value);
-        uniqueValues.push(value);
-    }
-
-    return uniqueValues;
+    return [...new Set(values.filter(Boolean))];
 }
 
 function sanitizeFilename(value) {
@@ -794,33 +357,26 @@ function sanitizeFilename(value) {
         .replace(/-+/g, '-')
         .replace(/^[.\s-]+|[.\s-]+$/g, '');
 
-    if (!filename) {
-        filename = 'youtube-links';
-    }
-
+    if (!filename) filename = 'video-links';
     return `${filename}.txt`;
 }
 
 function buildTxtFilename(pageInfo) {
     if (pageInfo.mode === 'single') {
-        return sanitizeFilename(pageInfo.title || 'youtube-video');
+        return sanitizeFilename(pageInfo.title || `${pageInfo.provider}-video`);
     }
 
-    const channelName = pageInfo.channelName || 'youtube-channel';
-    const activeTabName = pageInfo.activeTabName || 'Links';
-    return sanitizeFilename(`${channelName}-${activeTabName}`);
+    return sanitizeFilename(
+        `${pageInfo.ownerName || `${pageInfo.provider}-profile`}-${pageInfo.collectionName || 'Videos'}`,
+    );
 }
 
 async function exportTxt(pageInfo) {
     const urls = uniquePreserveOrder(pageInfo?.urls || []);
-
-    if (!urls.length) {
-        throw new Error('NO_LINKS');
-    }
+    if (!urls.length) throw new Error('NO_LINKS');
 
     const content = `${urls.join('\n')}\n`;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const objectUrl = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
 
     try {
         await new Promise((resolve, reject) => {
@@ -874,19 +430,18 @@ async function sendToPineFetch(pageInfo) {
     }
 
     const isSingle = pageInfo.mode === 'single';
-    const path = isSingle ? SINGLE_LINK_PATH : MULTI_LINK_PATH;
-    const payload = isSingle ? { url: urls[0], secret } : { urls, secret };
-    const response = await postToPineFetch(endpointBase, path, payload);
+    const response = await postToPineFetch(
+        endpointBase,
+        isSingle ? SINGLE_LINK_PATH : MULTI_LINK_PATH,
+        isSingle ? { url: urls[0], secret } : { urls, secret },
+    );
 
     if (!response.ok) {
         setBadge('Error', 'danger');
-
-        if (response.reason === 'http') {
-            setStatus('PineFetch rejected the request.', 'error');
-        } else {
-            setStatus('Could not connect to PineFetch.', 'error');
-        }
-
+        setStatus(
+            response.reason === 'http' ? 'PineFetch rejected the request.' : 'Could not connect to PineFetch.',
+            'error',
+        );
         return;
     }
 
@@ -906,44 +461,22 @@ async function postToPineFetch(endpointBase, path, payload) {
     try {
         const response = await fetch(requestUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-
         let data = null;
-        const contentType = response.headers.get('content-type') || '';
 
-        if (contentType.includes('application/json')) {
-            try {
-                data = await response.json();
-            } catch (error) {
-                data = null;
-            }
-        } else {
-            try {
-                const text = await response.text();
-                data = text ? { text } : null;
-            } catch (error) {
-                data = null;
-            }
+        try {
+            data = (response.headers.get('content-type') || '').includes('application/json')
+                ? await response.json()
+                : { text: await response.text() };
+        } catch (error) {
+            data = null;
         }
 
-        if (!response.ok) {
-            return {
-                ok: false,
-                reason: 'http',
-                status: response.status,
-                data,
-            };
-        }
-
-        return {
-            ok: true,
-            status: response.status,
-            data,
-        };
+        return response.ok
+            ? { ok: true, status: response.status, data }
+            : { ok: false, reason: 'http', status: response.status, data };
     } catch (error) {
         return { ok: false, reason: 'network' };
     }
@@ -952,9 +485,7 @@ async function postToPineFetch(endpointBase, path, payload) {
 async function getStoredSettings() {
     return new Promise(resolve => {
         chrome.storage.local.get(STORAGE_DEFAULTS, result => {
-            const runtimeError = chrome.runtime.lastError;
-
-            if (runtimeError) {
+            if (chrome.runtime.lastError) {
                 resolve({ ...STORAGE_DEFAULTS });
                 return;
             }
@@ -974,16 +505,13 @@ async function saveStoredSettings(settings) {
                 endpointBase: settings.endpointBase || DEFAULT_ENDPOINT_BASE,
                 secret: settings.secret || '',
             },
-            () => {
-                resolve();
-            },
+            resolve,
         );
     });
 }
 
 function buildPineFetchRequestUrl(endpointBase, path) {
-    const base = String(endpointBase || DEFAULT_ENDPOINT_BASE).trim();
-    const parsedBase = new URL(base);
+    const parsedBase = new URL(String(endpointBase || DEFAULT_ENDPOINT_BASE).trim());
     const allowedHosts = new Set(['127.0.1', '127.0.0.1', 'localhost']);
 
     if (parsedBase.protocol !== 'http:' || !allowedHosts.has(parsedBase.hostname)) {
@@ -993,20 +521,4 @@ function buildPineFetchRequestUrl(endpointBase, path) {
     const cleanBase = `${parsedBase.origin}${parsedBase.pathname.replace(/\/+$/, '')}`;
     const cleanPath = `/${String(path || '').replace(/^\/+/, '')}`;
     return `${cleanBase}${cleanPath}`;
-}
-
-function isYoutubeTabUrl(url) {
-    try {
-        const parsed = new URL(url);
-        return parsed.hostname === 'youtu.be' || parsed.hostname === 'youtube.com' || parsed.hostname.endsWith('.youtube.com');
-    } catch (error) {
-        return false;
-    }
-}
-
-function cleanYoutubeTitle(value) {
-    return String(value || '')
-        .replace(/\s+-\s+YouTube\s*$/i, '')
-        .replace(/\s*-\s*YouTube\s*$/i, '')
-        .trim();
 }

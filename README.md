@@ -1,6 +1,12 @@
 # PineFetch Link Dump
 
-This extension detects YouTube video links on the current YouTube page and can either export them as a TXT file or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
+This extension detects video links on the current page and can either export them as a TXT file or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
+
+Supported sources:
+
+- YouTube videos, shorts, live videos, channels, and list pages
+- TikTok videos and all currently loaded videos on a profile page
+- Direct HTTP(S) sources from standard HTML5 `<video>` elements
 
 ## Installation
 
@@ -19,6 +25,8 @@ http://127.0.1:2255
 ```
 
 ## Used Endpoints
+
+PineFetch currently uses its existing endpoint names for every supported URL:
 
 ```txt
 POST /addYoutubeLinkToQueue/
@@ -51,12 +59,29 @@ Single video:
 2. Open the extension.
 3. Click "Send to PineFetch".
 
-Channel/list page:
+YouTube channel/list page:
 
 1. Open a YouTube channel tab, for example `/streams`, `/videos`, or `/shorts`.
 2. If you need more links, scroll further down on YouTube.
 3. Open the extension.
 4. Click "Send to PineFetch" or "Export TXT".
+
+TikTok profile page:
+
+1. Open a profile, for example `https://www.tiktok.com/@oliverjessner`.
+2. Scroll down until TikTok has loaded the videos you want.
+3. Open the extension.
+4. Click "Send to PineFetch" or "Export TXT". Only video URLs belonging to the opened profile are included.
+
+## Provider architecture
+
+Source-specific page detection is isolated in `providers/`:
+
+- `youtube.js`
+- `tiktok.js`
+- `standard-video.js` (fallback for regular HTML5 video pages)
+
+To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.
 
 ## Look and feel
 
