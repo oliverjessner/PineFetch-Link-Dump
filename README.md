@@ -83,6 +83,14 @@ Source-specific page detection is isolated in `providers/`:
 
 To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.
 
+## Icons
+
+```bash
+npm run generate:icons
+```
+
+The icon generator reads `assets/images/logo.png`, scales it proportionally with `contain`, and writes transparent square PNGs at 16, 32, 48, and 128 pixels to `assets/icons/`. The manifest uses these generated files for both the extension and toolbar action. `npm test` regenerates and validates them automatically.
+
 ## Look and feel
 
 ![](/assets/images/example.webp)
