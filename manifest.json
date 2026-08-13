@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "PineFetch Link Dump",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "minimum_chrome_version": "114",
     "description": "Export YouTube, TikTok, and direct video links or send them to a local PineFetch instance.",
     "icons": {
