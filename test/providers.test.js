@@ -171,6 +171,48 @@ test('TikTok profile collector keeps only loaded links from the current handle',
     }
 });
 
+test('TikTok music collector returns all unique loaded video links', async () => {
+    const originalWindow = globalThis.window;
+    const originalDocument = globalThis.document;
+
+    globalThis.window = {
+        location: {
+            href: 'https://www.tiktok.com/music/Originalton-7403439659437230881',
+            origin: 'https://www.tiktok.com',
+        },
+    };
+    globalThis.document = {
+        title: 'TikTok - Make Your Day',
+        querySelector(selector) {
+            return selector === 'h1' ? { textContent: 'Originalton' } : null;
+        },
+        querySelectorAll(selector) {
+            assert.equal(selector, 'a[href*="/video/"]');
+            return [
+                { href: 'https://www.tiktok.com/@first/video/100' },
+                { href: 'https://www.tiktok.com/@second/video/200?lang=en' },
+                { href: 'https://www.tiktok.com/@first/video/100' },
+                { href: 'https://example.com/@third/video/300' },
+            ];
+        },
+    };
+
+    try {
+        const pageInfo = await providers.tiktok.collectPageInfo();
+        assert.equal(pageInfo.mode, 'list');
+        assert.equal(pageInfo.title, 'Originalton');
+        assert.equal(pageInfo.ownerName, 'Originalton');
+        assert.equal(pageInfo.collectionName, 'Music');
+        assert.deepEqual(pageInfo.urls, [
+            'https://www.tiktok.com/@first/video/100',
+            'https://www.tiktok.com/@second/video/200',
+        ]);
+    } finally {
+        globalThis.window = originalWindow;
+        globalThis.document = originalDocument;
+    }
+});
+
 test('standard-video collector returns all unique HTTP video sources', async () => {
     const originalWindow = globalThis.window;
     const originalDocument = globalThis.document;

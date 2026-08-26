@@ -5,7 +5,7 @@ This extension detects video links on the current page and can either export the
 Supported sources:
 
 - YouTube videos, shorts, live videos, channels, and list pages
-- TikTok videos and all currently loaded videos on a profile page
+- TikTok videos and all currently loaded videos on profile or music pages
 - Instagram posts, reels, and all currently loaded posts on profile, reels, or tagged pages
 - Direct HTTP(S) sources from standard HTML5 `<video>` elements
 
@@ -24,6 +24,8 @@ Supported sources:
 ```txt
 http://127.0.1:2255
 ```
+
+![](/assets/images/settings_tiktok.webp)
 
 ## Used Endpoints
 
@@ -74,6 +76,12 @@ TikTok profile page:
 3. Open the extension.
 4. Click "Send to PineFetch" or "Export TXT". Only video URLs belonging to the opened profile are included.
 
+TikTok music page:
+
+1. Open a TikTok `/music/...` page.
+2. Scroll until TikTok has loaded the videos you want.
+3. Open the extension and click "Send to PineFetch" or "Export TXT".
+
 Instagram profile page:
 
 1. Open an Instagram profile or its `/reels/` or `/tagged/` tab.
@@ -102,4 +110,14 @@ The icon generator reads `assets/images/logo.png`, scales it proportionally with
 
 ## Look and feel
 
-![](/assets/images/example.webp)
+### Youtube
+
+![](/assets/images/send_youtube.webp)
+
+### Instagram
+
+![](/assets/images/send_instagram.webp)
+
+### TikTok
+
+![](/assets/images/send_tiktok.webp)

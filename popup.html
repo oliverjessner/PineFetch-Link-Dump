@@ -64,10 +64,69 @@
                 min-width: 0;
             }
 
+            .pf-view-toggle {
+                width: 100%;
+            }
+
+            .pf-view-toggle .pf-segmented-btn {
+                flex: 1 1 0;
+            }
+
+            .pf-view-panel {
+                display: grid;
+                gap: var(--pf-space-3xl);
+            }
+
+            .pf-view-panel[hidden] {
+                display: none;
+            }
+
             .pf-footer-row {
                 justify-content: space-between;
                 flex-wrap: nowrap;
                 align-items: center;
+            }
+
+            .pf-feedback-panel {
+                min-height: 38px;
+                padding: var(--pf-space-xl) var(--pf-space-2xl);
+                background: var(--pf-panel-muted);
+                border: var(--pf-border-width) solid var(--pf-border);
+                border-radius: var(--pf-radius-md);
+                transition:
+                    background-color var(--pf-duration-normal) var(--pf-ease-standard),
+                    border-color var(--pf-duration-normal) var(--pf-ease-standard),
+                    box-shadow var(--pf-duration-normal) var(--pf-ease-standard);
+            }
+
+            .pf-feedback-panel[data-status='success'] {
+                background: var(--pf-accent-dim);
+                border-color: var(--pf-border-strong);
+                box-shadow: var(--pf-shadow-inset-accent);
+            }
+
+            .pf-feedback-panel[data-status='warning'] {
+                background: var(--pf-warning-dim);
+                border-color: var(--pf-warning-border);
+            }
+
+            .pf-feedback-panel[data-status='error'] {
+                background: var(--pf-danger-dim);
+                border-color: var(--pf-danger-border-soft);
+            }
+
+            .pf-send-success {
+                background: var(--pf-accent-dim);
+                border-color: var(--pf-accent);
+                color: var(--pf-accent);
+                box-shadow: var(--pf-shadow-inset-accent);
+            }
+
+            .pf-send-error {
+                background: var(--pf-danger-dim);
+                border-color: var(--pf-danger);
+                color: var(--pf-danger);
+                box-shadow: none;
             }
 
             .pf-footer-row .pf-status {
@@ -110,53 +169,96 @@
                     <span class="pf-badge pf-badge-muted pf-non-select" id="pfStateBadge">Idle</span>
                 </header>
 
-                <div class="pf-stack-sm" aria-label="Settings">
-                    <label class="pf-field" for="pfEndpointInput">
-                        <span class="pf-label pf-non-select">PineFetch Endpoint</span>
-                        <input
-                            class="pf-input"
-                            id="pfEndpointInput"
-                            type="url"
-                            spellcheck="false"
-                            autocomplete="off"
-                            inputmode="url"
-                            value="http://127.0.1:2255"
-                        />
-                    </label>
-
-                    <label class="pf-field" for="pfSecretInput">
-                        <span class="pf-label pf-non-select">PineFetch Secret</span>
-                        <input
-                            class="pf-input"
-                            id="pfSecretInput"
-                            type="password"
-                            spellcheck="false"
-                            autocomplete="off"
-                        />
-                    </label>
+                <div class="pf-segmented pf-view-toggle" role="tablist" aria-label="Popup view">
+                    <button
+                        class="pf-segmented-btn pf-is-active"
+                        id="pfSendTab"
+                        type="button"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="pfSendPanel"
+                        data-popup-view="send"
+                    >
+                        Send
+                    </button>
+                    <button
+                        class="pf-segmented-btn"
+                        id="pfSettingsTab"
+                        type="button"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="pfSettingsPanel"
+                        data-popup-view="settings"
+                        tabindex="-1"
+                    >
+                        Settings
+                    </button>
                 </div>
 
-                <section class="pf-panel-soft pf-stack-sm" aria-labelledby="pfPreviewTitle">
-                    <header class="pf-toolbar" style="flex-direction: row">
-                        <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No links</span>
-                        <span class="pf-text pf-non-select">Links: <span id="pfPreviewCount">0</span></span>
-                    </header>
+                <section
+                    class="pf-view-panel"
+                    id="pfSendPanel"
+                    role="tabpanel"
+                    aria-labelledby="pfSendTab"
+                >
+                    <section class="pf-panel-soft pf-stack-sm" aria-label="Detected video links">
+                        <header class="pf-toolbar" style="flex-direction: row">
+                            <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No links</span>
+                            <span class="pf-text pf-non-select">Links: <span id="pfPreviewCount">0</span></span>
+                        </header>
 
-                    <div class="pf-stack-sm pf-scroll-area" id="pfPreviewLinks" aria-live="polite">
-                        <p class="pf-status">No links found.</p>
+                        <div class="pf-stack-sm pf-scroll-area" id="pfPreviewLinks" aria-live="polite">
+                            <p class="pf-status">No links found.</p>
+                        </div>
+                    </section>
+
+                    <div class="pf-row pf-action-row" aria-label="Actions">
+                        <button class="pf-btn pf-btn-primary pf-grow pf-non-select" id="pfSendButton" type="button">
+                            Send to PineFetch
+                        </button>
+                        <button class="pf-btn pf-btn-ghost pf-grow pf-non-select" id="pfExportButton" type="button">
+                            Export TXT
+                        </button>
                     </div>
                 </section>
 
-                <div class="pf-row pf-action-row" aria-label="Actions">
-                    <button class="pf-btn pf-btn-primary pf-grow pf-non-select" id="pfSendButton" type="button">
-                        Send to PineFetch
-                    </button>
-                    <button class="pf-btn pf-btn-ghost pf-grow pf-non-select" id="pfExportButton" type="button">
-                        Export TXT
-                    </button>
-                </div>
+                <section
+                    class="pf-view-panel"
+                    id="pfSettingsPanel"
+                    role="tabpanel"
+                    aria-labelledby="pfSettingsTab"
+                    hidden
+                >
+                    <div class="pf-stack-sm" aria-label="PineFetch settings">
+                        <label class="pf-field" for="pfEndpointInput">
+                            <span class="pf-label pf-non-select">PineFetch Endpoint</span>
+                            <input
+                                class="pf-input"
+                                id="pfEndpointInput"
+                                type="url"
+                                spellcheck="false"
+                                autocomplete="off"
+                                inputmode="url"
+                                value="http://127.0.1:2255"
+                            />
+                        </label>
 
-                <footer class="pf-row pf-footer-row pf-non-select">
+                        <label class="pf-field" for="pfSecretInput">
+                            <span class="pf-label pf-non-select">PineFetch Secret</span>
+                            <input
+                                class="pf-input"
+                                id="pfSecretInput"
+                                type="password"
+                                spellcheck="false"
+                                autocomplete="off"
+                            />
+                        </label>
+                    </div>
+
+                    <p class="pf-hint">Settings are saved automatically.</p>
+                </section>
+
+                <footer class="pf-row pf-footer-row pf-feedback-panel pf-non-select" id="pfFeedbackPanel">
                     <p class="pf-status pf-grow" id="pfStatusMessage" role="status" aria-live="polite">Ready.</p>
                     <span class="pf-status pf-version-label" id="pfVersionLabel" aria-label="Extension version"></span>
                 </footer>

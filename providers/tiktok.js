@@ -85,30 +85,50 @@
         }
 
         const pageUrl = window.location.href;
-        const pathMatch = new URL(pageUrl).pathname.match(/^\/@([^/]+)(?:\/video\/(\d+))?/i);
+        const pagePath = new URL(pageUrl).pathname;
+        const pathMatch = pagePath.match(/^\/@([^/]+)(?:\/video\/(\d+))?/i);
         const profileHandle = pathMatch?.[1] || '';
+        const isMusicPage = /^\/music\/[^/]+\/?$/i.test(pagePath);
+        const musicNameFromPath = (() => {
+            if (!isMusicPage) return '';
+
+            try {
+                return decodeURIComponent(pagePath.split('/').filter(Boolean)[1] || '')
+                    .replace(/-\d+$/, '')
+                    .replace(/-/g, ' ')
+                    .trim();
+            } catch (error) {
+                return '';
+            }
+        })();
         const singleUrl = normalizeTikTokVideoUrl(pageUrl);
         let urls = [];
 
         if (singleUrl) {
             urls = [singleUrl];
-        } else if (profileHandle) {
-            const expectedHandle = profileHandle.toLowerCase();
+        } else if (profileHandle || isMusicPage) {
             urls = Array.from(document.querySelectorAll('a[href*="/video/"]'))
-                .map(anchor => normalizeTikTokVideoUrl(anchor.href || anchor.getAttribute('href') || ''))
-                .filter(url => {
-                    if (!url) {
-                        return false;
-                    }
+                .map(anchor => normalizeTikTokVideoUrl(anchor.href || anchor.getAttribute('href') || ''));
+
+            if (profileHandle) {
+                const expectedHandle = profileHandle.toLowerCase();
+                urls = urls.filter(url => {
+                    if (!url) return false;
 
                     const handle = new URL(url).pathname.split('/')[1]?.replace(/^@/, '').toLowerCase();
                     return handle === expectedHandle;
                 });
-            urls = [...new Set(urls)];
+            }
+
+            urls = [...new Set(urls.filter(Boolean))];
         }
 
-        const title = cleanTikTokTitle(readMetaContent('meta[property="og:title"]') || document.title);
+        const musicTitle = isMusicPage ? readFirstText(['h1']) || musicNameFromPath : '';
+        const title = cleanTikTokTitle(
+            musicTitle || readMetaContent('meta[property="og:title"]') || document.title,
+        );
         const ownerName =
+            musicTitle ||
             readFirstText(['h1[data-e2e="user-title"]', 'h2[data-e2e="user-subtitle"]']) ||
             readMetaContent('meta[property="og:title"]') ||
             profileHandle ||
@@ -121,7 +141,7 @@
             pageUrl,
             title,
             ownerName: cleanTikTokTitle(ownerName),
-            collectionName: 'Videos',
+            collectionName: isMusicPage ? 'Music' : 'Videos',
             urls,
         };
     }
