@@ -6,6 +6,7 @@ const test = require('node:test');
 globalThis.PineFetchLinkProviders = [];
 require('../providers/youtube.js');
 require('../providers/tiktok.js');
+require('../providers/instagram.js');
 require('../providers/standard-video.js');
 
 const providers = Object.fromEntries(globalThis.PineFetchLinkProviders.map(provider => [provider.id, provider]));
@@ -13,11 +14,63 @@ const providers = Object.fromEntries(globalThis.PineFetchLinkProviders.map(provi
 test('registers specific providers before the standard-video fallback', () => {
     assert.deepEqual(
         globalThis.PineFetchLinkProviders.map(provider => provider.id),
-        ['youtube', 'tiktok', 'standard-video'],
+        ['youtube', 'tiktok', 'instagram', 'standard-video'],
     );
     assert.equal(providers.youtube.matches('https://www.youtube.com/@pinefetch/videos'), true);
     assert.equal(providers.tiktok.matches('https://www.tiktok.com/@oliverjessner'), true);
+    assert.equal(providers.instagram.matches('https://www.instagram.com/pinefetch/'), true);
     assert.equal(providers['standard-video'].matches('https://example.com/video'), true);
+});
+
+test('normalizes Instagram posts and reels and rejects lookalike domains', () => {
+    assert.equal(
+        providers.instagram.normalizeContentUrl('https://www.instagram.com/p/ABC_123/?utm_source=ig_web_copy_link'),
+        'https://www.instagram.com/p/ABC_123/',
+    );
+    assert.equal(
+        providers.instagram.normalizeContentUrl('https://instagram.com/reel/XYZ-789?igsh=test'),
+        'https://www.instagram.com/reel/XYZ-789/',
+    );
+    assert.equal(providers.instagram.normalizeContentUrl('https://instagram.com.evil.example/p/ABC_123/'), null);
+    assert.equal(providers.instagram.getProfileHandle('https://www.instagram.com/explore/'), '');
+});
+
+test('Instagram profile collector returns unique loaded posts and reels', async () => {
+    const originalWindow = globalThis.window;
+    const originalDocument = globalThis.document;
+
+    globalThis.window = {
+        location: { href: 'https://www.instagram.com/pinefetch/reels/', origin: 'https://www.instagram.com' },
+    };
+    globalThis.document = {
+        title: 'PineFetch • Instagram photos and videos',
+        querySelector() {
+            return null;
+        },
+        querySelectorAll(selector) {
+            assert.equal(selector, 'a[href*="/p/"], a[href*="/reel/"], a[href*="/tv/"]');
+            return [
+                { href: 'https://www.instagram.com/reel/ONE/?igsh=abc' },
+                { href: 'https://www.instagram.com/p/TWO/' },
+                { href: 'https://www.instagram.com/reel/ONE/' },
+                { href: 'https://example.com/p/THREE/' },
+            ];
+        },
+    };
+
+    try {
+        const pageInfo = await providers.instagram.collectPageInfo();
+        assert.equal(pageInfo.mode, 'list');
+        assert.equal(pageInfo.ownerName, 'pinefetch');
+        assert.equal(pageInfo.collectionName, 'Reels');
+        assert.deepEqual(pageInfo.urls, [
+            'https://www.instagram.com/reel/ONE/',
+            'https://www.instagram.com/p/TWO/',
+        ]);
+    } finally {
+        globalThis.window = originalWindow;
+        globalThis.document = originalDocument;
+    }
 });
 
 test('normalizes supported YouTube video URL variants', () => {

@@ -6,6 +6,7 @@ Supported sources:
 
 - YouTube videos, shorts, live videos, channels, and list pages
 - TikTok videos and all currently loaded videos on a profile page
+- Instagram posts, reels, and all currently loaded posts on profile, reels, or tagged pages
 - Direct HTTP(S) sources from standard HTML5 `<video>` elements
 
 ## Installation
@@ -73,12 +74,20 @@ TikTok profile page:
 3. Open the extension.
 4. Click "Send to PineFetch" or "Export TXT". Only video URLs belonging to the opened profile are included.
 
+Instagram profile page:
+
+1. Open an Instagram profile or its `/reels/` or `/tagged/` tab.
+2. Sign in if the profile requires it, then scroll until Instagram has loaded the posts you want.
+3. Open the extension.
+4. Click "Send to PineFetch" or "Export TXT". Single `/p/`, `/reel/`, and legacy `/tv/` URLs are also supported.
+
 ## Provider architecture
 
 Source-specific page detection is isolated in `providers/`:
 
 - `youtube.js`
 - `tiktok.js`
+- `instagram.js`
 - `standard-video.js` (fallback for regular HTML5 video pages)
 
 To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.
