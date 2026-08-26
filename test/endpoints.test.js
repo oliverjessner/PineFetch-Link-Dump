@@ -16,6 +16,7 @@ async function loadPopupTestApi() {
     vm.runInNewContext(
         `${popupSource}\n;globalThis.popupTestApi = {
             formatLinkCount,
+            getSupportedNetworkLabels,
             getSendErrorState,
             setSendButtonState,
             switchPopupView,
@@ -33,6 +34,22 @@ test('uses the platform-neutral PineFetch video endpoints', async () => {
     assert.match(popupSource, /const SINGLE_LINK_PATH = '\/addVideoLinkToQueue\/';/);
     assert.match(popupSource, /const MULTI_LINK_PATH = '\/addVideoLinksToQueue\/';/);
     assert.doesNotMatch(popupSource, /addYoutube/);
+});
+
+test('lists registered social networks without the generic web-video fallback', async () => {
+    const popup = await loadPopupTestApi();
+
+    assert.deepEqual(
+        Array.from(
+            popup.getSupportedNetworkLabels([
+                { id: 'youtube', label: 'YouTube' },
+                { id: 'tiktok', label: 'TikTok' },
+                { id: 'instagram', label: 'Instagram' },
+                { id: 'standard-video', label: 'Web video' },
+            ]),
+        ),
+        ['YouTube', 'TikTok', 'Instagram'],
+    );
 });
 
 test('switches between accessible Send and Settings panels', async () => {

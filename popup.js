@@ -18,6 +18,7 @@ async function initPopup() {
     cacheElements();
     bindEvents();
     switchPopupView('send');
+    renderSupportedNetworks();
     setBadge('Idle', 'muted');
     setStatus('Ready.');
     setVersionLabel(await loadPackageVersion());
@@ -34,6 +35,7 @@ function cacheElements() {
     elements.viewTabs = Array.from(document.querySelectorAll('[data-popup-view]'));
     elements.sendPanel = document.getElementById('pfSendPanel');
     elements.settingsPanel = document.getElementById('pfSettingsPanel');
+    elements.supportedNetworks = document.getElementById('pfSupportedNetworks');
     elements.sendButton = document.getElementById('pfSendButton');
     elements.exportButton = document.getElementById('pfExportButton');
     elements.stateBadge = document.getElementById('pfStateBadge');
@@ -98,6 +100,24 @@ function switchPopupView(view, focusTab = false) {
 
     elements.sendPanel.hidden = view !== 'send';
     elements.settingsPanel.hidden = view !== 'settings';
+}
+
+function getSupportedNetworkLabels(providers = globalThis.PineFetchLinkProviders || []) {
+    return providers
+        .filter(provider => provider.id !== 'standard-video')
+        .map(provider => String(provider.label || '').trim())
+        .filter(Boolean);
+}
+
+function renderSupportedNetworks() {
+    const badges = getSupportedNetworkLabels().map(label => {
+        const badge = document.createElement('span');
+        badge.className = 'pf-badge pf-non-select';
+        badge.textContent = label;
+        return badge;
+    });
+
+    elements.supportedNetworks.replaceChildren(...badges);
 }
 
 function scheduleSettingsSave() {

@@ -81,6 +81,10 @@
                 display: none;
             }
 
+            .pf-network-list {
+                align-items: center;
+            }
+
             .pf-footer-row {
                 justify-content: space-between;
                 flex-wrap: nowrap;
@@ -254,6 +258,11 @@
                             />
                         </label>
                     </div>
+
+                    <section class="pf-panel-soft pf-stack-sm" aria-labelledby="pfSupportedNetworksTitle">
+                        <h2 class="pf-label pf-non-select" id="pfSupportedNetworksTitle">Supported networks</h2>
+                        <div class="pf-row pf-network-list" id="pfSupportedNetworks"></div>
+                    </section>
 
                     <p class="pf-hint">Settings are saved automatically.</p>
                 </section>
