@@ -27,11 +27,11 @@ http://127.0.1:2255
 
 ## Used Endpoints
 
-PineFetch currently uses its existing endpoint names for every supported URL:
+PineFetch uses these endpoints for every supported video URL:
 
 ```txt
-POST /addYoutubeLinkToQueue/
-POST /addYoutubeLinksToQueue/
+POST /addVideoLinkToQueue/
+POST /addVideoLinksToQueue/
 ```
 
 Payload for a single video:

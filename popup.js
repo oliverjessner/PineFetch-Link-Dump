@@ -1,9 +1,8 @@
 'use strict';
 
 const DEFAULT_ENDPOINT_BASE = 'http://127.0.1:2255';
-// PineFetch currently exposes these legacy endpoint names for every yt-dlp compatible URL.
-const SINGLE_LINK_PATH = '/addYoutubeLinkToQueue/';
-const MULTI_LINK_PATH = '/addYoutubeLinksToQueue/';
+const SINGLE_LINK_PATH = '/addVideoLinkToQueue/';
+const MULTI_LINK_PATH = '/addVideoLinksToQueue/';
 const STORAGE_DEFAULTS = { endpointBase: DEFAULT_ENDPOINT_BASE, secret: '' };
 
 let currentPageInfo = null;
