@@ -39,7 +39,9 @@
                 return null;
             }
 
-            const match = parsed.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/i);
+            const match = parsed.pathname.match(
+                /^\/(?:[A-Za-z0-9._]+\/)?(p|reel|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/i,
+            );
             return match ? `https://www.instagram.com/${match[1].toLowerCase()}/${match[2]}/` : null;
         } catch (error) {
             return null;
@@ -98,7 +100,9 @@
         function normalizeInstagramContentUrl(url) {
             try {
                 const parsed = new URL(url, window.location.origin);
-                const match = parsed.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/i);
+                const match = parsed.pathname.match(
+                    /^\/(?:[A-Za-z0-9._]+\/)?(p|reel|tv)\/([A-Za-z0-9_-]+)(?:\/|$)/i,
+                );
 
                 if (!isInstagramHost(parsed.hostname) || !match) {
                     return null;

@@ -31,6 +31,10 @@ test('normalizes Instagram posts and reels and rejects lookalike domains', () =>
         providers.instagram.normalizeContentUrl('https://instagram.com/reel/XYZ-789?igsh=test'),
         'https://www.instagram.com/reel/XYZ-789/',
     );
+    assert.equal(
+        providers.instagram.normalizeContentUrl('https://www.instagram.com/oliverjessner/reel/DRpZWMWiIjD/'),
+        'https://www.instagram.com/reel/DRpZWMWiIjD/',
+    );
     assert.equal(providers.instagram.normalizeContentUrl('https://instagram.com.evil.example/p/ABC_123/'), null);
     assert.equal(providers.instagram.getProfileHandle('https://www.instagram.com/explore/'), '');
 });
@@ -50,8 +54,8 @@ test('Instagram profile collector returns unique loaded posts and reels', async 
         querySelectorAll(selector) {
             assert.equal(selector, 'a[href*="/p/"], a[href*="/reel/"], a[href*="/tv/"]');
             return [
-                { href: 'https://www.instagram.com/reel/ONE/?igsh=abc' },
-                { href: 'https://www.instagram.com/p/TWO/' },
+                { href: 'https://www.instagram.com/pinefetch/reel/ONE/?igsh=abc' },
+                { href: 'https://www.instagram.com/pinefetch/p/TWO/' },
                 { href: 'https://www.instagram.com/reel/ONE/' },
                 { href: 'https://example.com/p/THREE/' },
             ];
