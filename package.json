@@ -10,8 +10,11 @@
         "type": "git",
         "url": "git+https://github.com/oliverjessner/PineFetch-Link-Dump.git"
     },
+        "author": {
+        "name": "oliverjessner",
+        "url": "https://oliverjessner.at"
+    },
     "license": "MIT",
-    "author": "oliverjessner",
     "type": "commonjs",
     "main": "index.js",
     "scripts": {
