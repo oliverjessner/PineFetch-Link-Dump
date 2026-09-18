@@ -45,10 +45,13 @@ test('lists registered social networks without the generic web-video fallback', 
                 { id: 'youtube', label: 'YouTube' },
                 { id: 'tiktok', label: 'TikTok' },
                 { id: 'instagram', label: 'Instagram' },
+                { id: 'reddit', label: 'Reddit' },
+                { id: 'x', label: 'X' },
+                { id: 'facebook', label: 'Facebook' },
                 { id: 'standard-video', label: 'Web video' },
             ]),
         ),
-        ['YouTube', 'TikTok', 'Instagram'],
+        ['YouTube', 'TikTok', 'Instagram', 'Reddit', 'X', 'Facebook'],
     );
 });
 

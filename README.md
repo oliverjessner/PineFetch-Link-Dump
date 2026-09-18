@@ -7,6 +7,9 @@ Supported sources:
 - YouTube videos, shorts, live videos, channels, and list pages
 - TikTok videos and all currently loaded videos on profile or music pages
 - Instagram posts, reels, and all currently loaded posts on profile, reels, or tagged pages
+- Reddit posts and loaded post links on subreddit or user pages
+- X posts and loaded post links on timelines or media pages (including twitter.com links)
+- Facebook reels, videos, watch links, and loaded video links on pages
 - Direct HTTP(S) sources from standard HTML5 `<video>` elements
 
 ## Installation
@@ -89,6 +92,11 @@ Instagram profile page:
 3. Open the extension.
 4. Click "Send to PineFetch" or "Export TXT". Single `/p/`, `/reel/`, and legacy `/tv/` URLs are also supported.
 
+Reddit, X, or Facebook:
+
+1. Open a post or video page, or scroll a listing to load more links.
+2. Open the extension and click "Send to PineFetch" or "Export TXT". Reddit and X listings collect post links, including posts without video; those links may fail when PineFetch processes them.
+
 ## Provider architecture
 
 Source-specific page detection is isolated in `providers/`:
@@ -96,6 +104,9 @@ Source-specific page detection is isolated in `providers/`:
 - `youtube.js`
 - `tiktok.js`
 - `instagram.js`
+- `reddit.js`
+- `x.js`
+- `facebook.js`
 - `standard-video.js` (fallback for regular HTML5 video pages)
 
 To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.

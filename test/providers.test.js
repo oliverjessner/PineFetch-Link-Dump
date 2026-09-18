@@ -2,24 +2,122 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const { readFile } = require('node:fs/promises');
+const { resolve } = require('node:path');
 
 globalThis.PineFetchLinkProviders = [];
 require('../providers/youtube.js');
 require('../providers/tiktok.js');
 require('../providers/instagram.js');
+require('../providers/reddit.js');
+require('../providers/x.js');
+require('../providers/facebook.js');
 require('../providers/standard-video.js');
 
 const providers = Object.fromEntries(globalThis.PineFetchLinkProviders.map(provider => [provider.id, provider]));
 
+test('loads every provider in the popup before the fallback', async () => {
+    const html = await readFile(resolve('popup.html'), 'utf8');
+    const scripts = [...html.matchAll(/<script src="(providers\/[^\"]+)" defer><\/script>/g)]
+        .map(match => match[1]);
+    assert.deepEqual(scripts, globalThis.PineFetchLinkProviders.map(provider => `providers/${provider.id}.js`));
+});
+
 test('registers specific providers before the standard-video fallback', () => {
     assert.deepEqual(
         globalThis.PineFetchLinkProviders.map(provider => provider.id),
-        ['youtube', 'tiktok', 'instagram', 'standard-video'],
+        ['youtube', 'tiktok', 'instagram', 'reddit', 'x', 'facebook', 'standard-video'],
     );
     assert.equal(providers.youtube.matches('https://www.youtube.com/@pinefetch/videos'), true);
     assert.equal(providers.tiktok.matches('https://www.tiktok.com/@oliverjessner'), true);
     assert.equal(providers.instagram.matches('https://www.instagram.com/pinefetch/'), true);
+    assert.equal(providers.reddit.matches('https://old.reddit.com/r/videos/'), true);
+    assert.equal(providers.x.matches('https://twitter.com/pinefetch'), true);
+    assert.equal(providers.facebook.matches('https://m.facebook.com/watch/?v=123'), true);
     assert.equal(providers['standard-video'].matches('https://example.com/video'), true);
+});
+
+test('normalizes Reddit posts and rejects lookalike domains', () => {
+    assert.equal(providers.reddit.normalizePostUrl('https://old.reddit.com/r/videos/comments/AbC123/example/?utm_source=share'),
+        'https://www.reddit.com/r/videos/comments/abc123/');
+    assert.equal(providers.reddit.normalizePostUrl('https://redd.it/AbC123?share_id=1'),
+        'https://www.reddit.com/comments/abc123/');
+    assert.equal(providers.reddit.normalizePostUrl('https://reddit.com.evil.example/r/videos/comments/abc123/'), null);
+});
+
+test('normalizes X and Twitter posts and rejects lookalike domains', () => {
+    assert.equal(providers.x.normalizePostUrl('https://twitter.com/pinefetch/status/123456/video/1?s=20'),
+        'https://x.com/pinefetch/status/123456');
+    assert.equal(providers.x.normalizePostUrl('https://x.com/i/status/123456'),
+        'https://x.com/i/status/123456');
+    assert.equal(providers.x.normalizePostUrl('https://x.com.evil.example/pinefetch/status/123456'), null);
+});
+
+test('normalizes Facebook video forms and rejects non-video and lookalike links', () => {
+    assert.equal(providers.facebook.normalizeVideoUrl('https://m.facebook.com/reel/123456/?mibextid=abc'),
+        'https://www.facebook.com/reel/123456/');
+    assert.equal(providers.facebook.normalizeVideoUrl('https://www.facebook.com/pinefetch/videos/123456/?ref=share'),
+        'https://www.facebook.com/videos/123456/');
+    assert.equal(providers.facebook.normalizeVideoUrl('https://www.facebook.com/watch/?v=123456&t=3'),
+        'https://www.facebook.com/watch/?v=123456');
+    assert.equal(providers.facebook.normalizeVideoUrl('https://fb.watch/Ab_C-123/'),
+        'https://fb.watch/Ab_C-123/');
+    assert.equal(providers.facebook.normalizeVideoUrl('https://www.facebook.com/pinefetch/posts/123456'), null);
+    assert.equal(providers.facebook.normalizeVideoUrl('https://facebook.com.evil.example/reel/123456'), null);
+});
+
+test('new provider collectors deduplicate loaded links and exclude foreign hosts', async () => {
+    const originalWindow = globalThis.window;
+    const originalDocument = globalThis.document;
+    const cases = [
+        {
+            provider: providers.reddit,
+            page: 'https://www.reddit.com/r/videos/',
+            links: [
+                'https://www.reddit.com/r/videos/comments/abc123/first/',
+                'https://old.reddit.com/r/videos/comments/abc123/first/?ref=share',
+                'https://reddit.com.evil.example/r/videos/comments/def456/',
+            ],
+            expected: ['https://www.reddit.com/r/videos/comments/abc123/'],
+        },
+        {
+            provider: providers.x,
+            page: 'https://x.com/pinefetch/media',
+            links: [
+                'https://twitter.com/pinefetch/status/123456/video/1',
+                'https://x.com/pinefetch/status/123456',
+                'https://x.com.evil.example/pinefetch/status/789',
+            ],
+            expected: ['https://x.com/pinefetch/status/123456'],
+        },
+        {
+            provider: providers.facebook,
+            page: 'https://www.facebook.com/pinefetch/videos/',
+            links: [
+                'https://www.facebook.com/pinefetch/videos/123456/',
+                'https://m.facebook.com/videos/123456/?ref=share',
+                'https://facebook.com.evil.example/reel/789',
+            ],
+            expected: ['https://www.facebook.com/videos/123456/'],
+        },
+    ];
+
+    try {
+        for (const sample of cases) {
+            globalThis.window = { location: { href: sample.page, origin: new URL(sample.page).origin } };
+            globalThis.document = {
+                title: 'Example',
+                querySelector() { return null; },
+                querySelectorAll() { return sample.links.map(href => ({ href })); },
+            };
+            const pageInfo = await sample.provider.collectPageInfo();
+            assert.equal(pageInfo.mode, 'list');
+            assert.deepEqual(pageInfo.urls, sample.expected);
+        }
+    } finally {
+        globalThis.window = originalWindow;
+        globalThis.document = originalDocument;
+    }
 });
 
 test('normalizes Instagram posts and reels and rejects lookalike domains', () => {
