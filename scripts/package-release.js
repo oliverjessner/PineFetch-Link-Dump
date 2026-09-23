@@ -2,7 +2,6 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const archiver = require('archiver');
 
 const root = path.resolve(__dirname, '..');
 const packageJson = require(path.join(root, 'package.json'));
@@ -47,46 +46,50 @@ for (const file of files) {
     }
 }
 
-fs.rmSync(distDir, { recursive: true, force: true });
-fs.mkdirSync(distDir, { recursive: true });
+async function createReleaseArchive() {
+    const { ZipArchive } = await import('archiver');
 
-const output = fs.createWriteStream(outputPath);
+    fs.rmSync(distDir, { recursive: true, force: true });
+    fs.mkdirSync(distDir, { recursive: true });
 
-const archive = archiver('zip', {
-    zlib: { level: 9 },
-});
-
-output.on('close', () => {
-    const size = archive.pointer();
-
-    console.log(`Created ${path.relative(root, outputPath)} (${size} bytes)`);
-});
-
-archive.on('warning', error => {
-    if (error.code !== 'ENOENT') {
-        throw error;
-    }
-});
-
-archive.on('error', error => {
-    throw error;
-});
-
-archive.pipe(output);
-
-/*
- * Use a fixed timestamp and deterministic file ordering.
- * That makes the resulting archive reproducible when the input files
- * have not changed.
- */
-const fixedDate = new Date('1980-01-01T00:00:00.000Z');
-
-for (const file of files) {
-    archive.file(path.join(root, file), {
-        name: file,
-        date: fixedDate,
-        mode: 0o644,
+    const output = fs.createWriteStream(outputPath);
+    const archive = new ZipArchive({
+        zlib: { level: 9 },
     });
+    const completed = new Promise((resolve, reject) => {
+        output.on('close', resolve);
+        output.on('error', reject);
+
+        archive.on('warning', error => {
+            if (error.code !== 'ENOENT') reject(error);
+        });
+        archive.on('error', reject);
+    });
+
+    archive.pipe(output);
+
+    /*
+     * Use a fixed timestamp and deterministic file ordering.
+     * That makes the resulting archive reproducible when the input files
+     * have not changed.
+     */
+    const fixedDate = new Date('1980-01-01T00:00:00.000Z');
+
+    for (const file of files) {
+        archive.append(fs.readFileSync(path.join(root, file)), {
+            name: file,
+            date: fixedDate,
+            mode: 0o644,
+        });
+    }
+
+    await archive.finalize();
+    await completed;
+
+    console.log(`Created ${path.relative(root, outputPath)} (${archive.pointer()} bytes)`);
 }
 
-archive.finalize();
+createReleaseArchive().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+});
