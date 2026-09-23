@@ -16,18 +16,15 @@
     },
     "license": "MIT",
     "type": "commonjs",
-    "main": "index.js",
     "scripts": {
         "generate:icons": "node scripts/generate-icons.js",
         "import:css": "cp node_modules/pinefetch-designsystem/dist/pinefetch.css vendor/",
         "test": "npm run generate:icons && node --test",
-        "build": "npm run test && npm run import:css && npm run generate:icons",
+        "build": "npm run import:css && npm run generate:icons",
         "check": "npm test && npm run build"
     },
-    "dependencies": {
-        "pinefetch-designsystem": "^0.2.0"
-    },
     "devDependencies": {
+        "pinefetch-designsystem": "^0.2.0",
         "jsdom": "^30.1.1",
         "sharp": "^0.35.4"
     }
