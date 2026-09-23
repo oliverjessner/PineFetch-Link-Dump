@@ -1,5 +1,11 @@
 node_modules/
 dist/
 coverage/
+build/ 
+.next/
 .DS_Store
 *.log
+.env
+.env.* 
+*.sqlite 
+*.db
