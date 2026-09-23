@@ -5,6 +5,8 @@ const SINGLE_LINK_PATH = '/addVideoLinkToQueue/';
 const MULTI_LINK_PATH = '/addVideoLinksToQueue/';
 const STORAGE_DEFAULTS = { endpointBase: DEFAULT_ENDPOINT_BASE, secret: '' };
 const SEND_BUTTON_RESET_DELAY_MS = 3500;
+const REQUEST_TIMEOUT_MS = 5000;
+const MAX_FILENAME_BASENAME_LENGTH = 180;
 
 let currentPageInfo = null;
 let isLoading = false;
@@ -329,13 +331,27 @@ async function loadPackageVersion() {
 
 async function getActiveTab() {
     const tabs = await new Promise(resolve => {
-        chrome.tabs.query({ active: true, currentWindow: true }, result => resolve(result || []));
+        try {
+            chrome.tabs.query({ active: true, currentWindow: true }, result => {
+                resolve(chrome.runtime.lastError ? [] : result || []);
+            });
+        } catch (error) {
+            resolve([]);
+        }
     });
     return tabs[0] || null;
 }
 
 function getProviderForUrl(url) {
-    return (globalThis.PineFetchLinkProviders || []).find(provider => provider.matches(url)) || null;
+    if (typeof url !== 'string' || !url.trim()) return null;
+
+    return (globalThis.PineFetchLinkProviders || []).find(provider => {
+        try {
+            return typeof provider?.matches === 'function' && provider.matches(url);
+        } catch (error) {
+            return false;
+        }
+    }) || null;
 }
 
 async function analyzeCurrentTab() {
@@ -409,13 +425,14 @@ function createEmptyPageInfo(tab, provider) {
 
 function normalizePageInfo(value, tab, provider) {
     const urls = uniquePreserveOrder(Array.isArray(value?.urls) ? value.urls : []);
+    const fallback = createEmptyPageInfo(tab, provider);
 
     return {
-        provider: value?.provider || provider.id,
-        providerLabel: value?.providerLabel || provider.label,
+        provider: String(value?.provider || fallback.provider),
+        providerLabel: String(value?.providerLabel || fallback.providerLabel),
         mode: urls.length && (value?.mode === 'single' || value?.mode === 'list') ? value.mode : 'unknown',
-        pageUrl: value?.pageUrl || tab?.url || '',
-        title: String(value?.title || tab?.title || '').trim(),
+        pageUrl: String(value?.pageUrl || fallback.pageUrl),
+        title: String(value?.title || fallback.title).trim(),
         ownerName: String(value?.ownerName || '').trim(),
         collectionName: String(value?.collectionName || 'Videos').trim(),
         urls,
@@ -482,11 +499,19 @@ function getModeLabel(pageInfo) {
 }
 
 function shortenUrl(url) {
-    return url.length <= 72 ? url : `${url.slice(0, 44)}...${url.slice(-20)}`;
+    const value = String(url || '');
+    return value.length <= 72 ? value : `${value.slice(0, 44)}...${value.slice(-20)}`;
 }
 
 function uniquePreserveOrder(values) {
-    return [...new Set(values.filter(Boolean))];
+    if (!Array.isArray(values)) return [];
+
+    return [...new Set(
+        values
+            .filter(value => typeof value === 'string')
+            .map(value => value.trim())
+            .filter(Boolean),
+    )];
 }
 
 function sanitizeFilename(value) {
@@ -499,17 +524,22 @@ function sanitizeFilename(value) {
         .replace(/-+/g, '-')
         .replace(/^[.\s-]+|[.\s-]+$/g, '');
 
+    filename = Array.from(filename).slice(0, MAX_FILENAME_BASENAME_LENGTH).join('')
+        .replace(/[.\s-]+$/g, '');
+
     if (!filename) filename = 'video-links';
     return `${filename}.txt`;
 }
 
 function buildTxtFilename(pageInfo) {
-    if (pageInfo.mode === 'single') {
-        return sanitizeFilename(pageInfo.title || `${pageInfo.provider}-video`);
+    const value = pageInfo || {};
+
+    if (value.mode === 'single') {
+        return sanitizeFilename(value.title || `${value.provider || 'video'}-video`);
     }
 
     return sanitizeFilename(
-        `${pageInfo.ownerName || `${pageInfo.provider}-profile`}-${pageInfo.collectionName || 'Videos'}`,
+        `${value.ownerName || `${value.provider || 'video'}-profile`}-${value.collectionName || 'Videos'}`,
     );
 }
 
@@ -588,7 +618,9 @@ async function sendToPineFetch(pageInfo) {
         setStatus(
             response.reason === 'http'
                 ? `PineFetch rejected the request${response.status ? ` (HTTP ${response.status})` : ''}.`
-                : `Could not reach PineFetch at ${endpointBase}. Is it running?`,
+                : response.reason === 'timeout'
+                  ? 'PineFetch did not respond in time. Please try again.'
+                  : `Could not reach PineFetch at ${endpointBase}. Is it running?`,
             'error',
         );
         return response;
@@ -599,7 +631,7 @@ async function sendToPineFetch(pageInfo) {
     return { ok: true, count: urls.length };
 }
 
-async function postToPineFetch(endpointBase, path, payload) {
+async function postToPineFetch(endpointBase, path, payload, timeoutMs = REQUEST_TIMEOUT_MS) {
     let requestUrl;
 
     try {
@@ -608,11 +640,15 @@ async function postToPineFetch(endpointBase, path, payload) {
         return { ok: false, reason: 'network' };
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
         const response = await fetch(requestUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            signal: controller.signal,
         });
         let data = null;
 
@@ -628,47 +664,71 @@ async function postToPineFetch(endpointBase, path, payload) {
             ? { ok: true, status: response.status, data }
             : { ok: false, reason: 'http', status: response.status, data };
     } catch (error) {
-        return { ok: false, reason: 'network' };
+        return {
+            ok: false,
+            reason: controller.signal.aborted || error?.name === 'AbortError' ? 'timeout' : 'network',
+        };
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 
 async function getStoredSettings() {
     return new Promise(resolve => {
-        chrome.storage.local.get(STORAGE_DEFAULTS, result => {
-            if (chrome.runtime.lastError) {
-                resolve({ ...STORAGE_DEFAULTS });
-                return;
-            }
+        try {
+            chrome.storage.local.get(STORAGE_DEFAULTS, result => {
+                if (chrome.runtime.lastError) {
+                    resolve({ ...STORAGE_DEFAULTS });
+                    return;
+                }
 
-            resolve({
-                endpointBase: result.endpointBase || DEFAULT_ENDPOINT_BASE,
-                secret: result.secret || '',
+                resolve({
+                    endpointBase: result?.endpointBase || DEFAULT_ENDPOINT_BASE,
+                    secret: result?.secret || '',
+                });
             });
-        });
+        } catch (error) {
+            resolve({ ...STORAGE_DEFAULTS });
+        }
     });
 }
 
 async function saveStoredSettings(settings) {
     return new Promise(resolve => {
-        chrome.storage.local.set(
-            {
-                endpointBase: settings.endpointBase || DEFAULT_ENDPOINT_BASE,
-                secret: settings.secret || '',
-            },
-            resolve,
-        );
+        try {
+            chrome.storage.local.set(
+                {
+                    endpointBase: settings?.endpointBase || DEFAULT_ENDPOINT_BASE,
+                    secret: settings?.secret || '',
+                },
+                () => resolve(!chrome.runtime.lastError),
+            );
+        } catch (error) {
+            resolve(false);
+        }
     });
 }
 
 function buildPineFetchRequestUrl(endpointBase, path) {
-    const parsedBase = new URL(String(endpointBase || DEFAULT_ENDPOINT_BASE).trim());
-    const allowedHosts = new Set(['127.0.1', '127.0.0.1', 'localhost']);
+    const value = String(endpointBase ?? '').trim();
+    if (!value) throw new Error('Invalid PineFetch endpoint');
 
-    if (parsedBase.protocol !== 'http:' || !allowedHosts.has(parsedBase.hostname)) {
+    const parsedBase = new URL(value);
+    const allowedHosts = new Set(['127.0.0.1', 'localhost']);
+
+    if (
+        parsedBase.protocol !== 'http:' ||
+        !allowedHosts.has(parsedBase.hostname.toLowerCase()) ||
+        parsedBase.username ||
+        parsedBase.password ||
+        parsedBase.search ||
+        parsedBase.hash
+    ) {
         throw new Error('Invalid PineFetch endpoint');
     }
 
-    const cleanBase = `${parsedBase.origin}${parsedBase.pathname.replace(/\/+$/, '')}`;
+    const normalizedPathname = parsedBase.pathname.replace(/\/{2,}/g, '/').replace(/\/+$/, '');
+    const cleanBase = `${parsedBase.origin}${normalizedPathname}`;
     const cleanPath = `/${String(path || '').replace(/^\/+/, '')}`;
     return `${cleanBase}${cleanPath}`;
 }

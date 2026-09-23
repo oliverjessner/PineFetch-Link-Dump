@@ -13,7 +13,7 @@
     function normalizeVideoUrl(url) {
         try {
             const parsed = new URL(url);
-            const host = parsed.hostname.replace(/^m\./, 'www.');
+            const host = parsed.hostname.replace(/^(?:m|music)\./, 'www.');
             let videoId = '';
 
             if (host === 'youtu.be') {
@@ -46,7 +46,7 @@
         function normalizeYoutubeVideoUrl(url) {
             try {
                 const parsed = new URL(url, window.location.origin);
-                const host = parsed.hostname.replace(/^m\./, 'www.');
+                const host = parsed.hostname.replace(/^(?:m|music)\./, 'www.');
                 let videoId = '';
 
                 if (host === 'youtu.be') {

@@ -85,6 +85,10 @@ TikTok music page:
 2. Scroll until TikTok has loaded the videos you want.
 3. Open the extension and click "Send to PineFetch" or "Export TXT".
 
+TikTok `vm.tiktok.com` and `vt.tiktok.com` links only contain redirect tokens, so the
+extension cannot resolve them reliably without a network redirect. Open the short
+link first and run the extension on the resulting canonical TikTok page.
+
 Instagram profile page:
 
 1. Open an Instagram profile or its `/reels/` or `/tagged/` tab.
@@ -110,6 +114,14 @@ Source-specific page detection is isolated in `providers/`:
 - `standard-video.js` (fallback for regular HTML5 video pages)
 
 To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.
+
+## Permission hardening note
+
+The extension currently retains `<all_urls>` host permission. Page-script injection
+is also gated by `activeTab`, but PineFetch endpoint requests and injection behavior
+must be verified in a packaged Chrome build before narrowing the persistent host
+patterns. This remains a manual browser-hardening check; automated Node tests cannot
+prove Chrome's permission behavior on arbitrary sites.
 
 ## Look and feel
 

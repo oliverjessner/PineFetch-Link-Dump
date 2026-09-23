@@ -29,14 +29,16 @@
         }
 
         function extractVideoUrls() {
+            function readDeclaredSources(element) {
+                const attributeValue = element.getAttribute('src');
+                const resolvedValue = element.src && element.src !== window.location.href ? element.src : '';
+                return [resolvedValue, attributeValue];
+            }
+
             const candidates = Array.from(document.querySelectorAll('video')).flatMap(video => [
                 video.currentSrc,
-                video.src,
-                video.getAttribute('src'),
-                ...Array.from(video.querySelectorAll('source')).flatMap(source => [
-                    source.src,
-                    source.getAttribute('src'),
-                ]),
+                ...readDeclaredSources(video),
+                ...Array.from(video.querySelectorAll('source')).flatMap(readDeclaredSources),
             ]);
 
             return [...new Set(candidates.map(normalizeMediaUrl).filter(Boolean))];
@@ -70,8 +72,13 @@
     globalThis.PineFetchLinkProviders.push({
         id: 'standard-video',
         label: 'Web video',
-        matches() {
-            return true;
+        matches(url) {
+            try {
+                const protocol = new URL(url).protocol;
+                return protocol === 'http:' || protocol === 'https:';
+            } catch (error) {
+                return false;
+            }
         },
         cleanTitle,
         collectPageInfo,
