@@ -40,6 +40,7 @@ function cacheElements() {
     elements.supportedNetworks = document.getElementById('pfSupportedNetworks');
     elements.sendButton = document.getElementById('pfSendButton');
     elements.exportButton = document.getElementById('pfExportButton');
+    elements.exportFormatSelect = document.getElementById('pfExportFormat');
     elements.stateBadge = document.getElementById('pfStateBadge');
     elements.previewMode = document.getElementById('pfPreviewMode');
     elements.previewCount = document.getElementById('pfPreviewCount');
@@ -62,6 +63,7 @@ function bindEvents() {
     elements.secretInput.addEventListener('change', persistCurrentSettings);
     elements.sendButton.addEventListener('click', handleSendClick);
     elements.exportButton.addEventListener('click', handleExportClick);
+    elements.exportFormatSelect.addEventListener('change', updateExportButtonLabel);
     elements.previewMode.addEventListener('click', copyCurrentPreviewLinks);
     elements.previewMode.addEventListener('keydown', handlePreviewModeCopyKeydown);
 }
@@ -165,9 +167,10 @@ async function handleSendClick() {
 }
 
 async function handleExportClick() {
+    const format = getSelectedExportFormat();
     setLoading(true, 'export');
-    elements.exportButton.textContent = 'Exporting...';
-    setStatus('Preparing the TXT export...');
+    elements.exportButton.textContent = `Exporting ${format.toUpperCase()}...`;
+    setStatus(`Preparing the ${format.toUpperCase()} export...`);
 
     try {
         const pageInfo = await analyzeCurrentTab();
@@ -178,11 +181,20 @@ async function handleExportClick() {
             return;
         }
 
-        await exportTxt(pageInfo);
+        await exportPageInfo(pageInfo, format);
     } finally {
         setLoading(false, 'export');
-        elements.exportButton.textContent = 'Export TXT';
+        updateExportButtonLabel();
     }
+}
+
+function getSelectedExportFormat() {
+    const format = String(elements.exportFormatSelect?.value || 'txt').toLowerCase();
+    return ['txt', 'json', 'csv'].includes(format) ? format : 'txt';
+}
+
+function updateExportButtonLabel() {
+    elements.exportButton.textContent = `Export ${getSelectedExportFormat().toUpperCase()}`;
 }
 
 async function handlePreviewModeCopyKeydown(event) {
@@ -252,6 +264,7 @@ function setLoading(loading, action = '') {
     isLoading = loading;
     elements.sendButton.disabled = loading;
     elements.exportButton.disabled = loading;
+    if (elements.exportFormatSelect) elements.exportFormatSelect.disabled = loading;
     elements.sendButton.classList.toggle('pf-btn-loading', loading && action === 'send');
     elements.exportButton.classList.toggle('pf-btn-loading', loading && action === 'export');
     elements.sendButton.setAttribute('aria-busy', String(loading && action === 'send'));
@@ -514,10 +527,13 @@ function uniquePreserveOrder(values) {
     )];
 }
 
-function sanitizeFilename(value) {
+function sanitizeFilename(value, extension = 'txt') {
+    const normalizedExtension = ['txt', 'json', 'csv'].includes(String(extension).toLowerCase())
+        ? String(extension).toLowerCase()
+        : 'txt';
     let filename = String(value || '')
         .trim()
-        .replace(/\.txt$/i, '')
+        .replace(/\.(?:txt|json|csv)$/i, '')
         .replace(/[\/\\:*?"<>|]+/g, '-')
         .replace(/\s+/g, ' ')
         .replace(/\s*-\s*/g, '-')
@@ -528,34 +544,85 @@ function sanitizeFilename(value) {
         .replace(/[.\s-]+$/g, '');
 
     if (!filename) filename = 'video-links';
-    return `${filename}.txt`;
+    return `${filename}.${normalizedExtension}`;
 }
 
-function buildTxtFilename(pageInfo) {
+function buildExportFilename(pageInfo, format = 'txt') {
     const value = pageInfo || {};
 
     if (value.mode === 'single') {
-        return sanitizeFilename(value.title || `${value.provider || 'video'}-video`);
+        return sanitizeFilename(value.title || `${value.provider || 'video'}-video`, format);
     }
 
     return sanitizeFilename(
         `${value.ownerName || `${value.provider || 'video'}-profile`}-${value.collectionName || 'Videos'}`,
+        format,
     );
 }
 
-async function exportTxt(pageInfo) {
+function buildTxtFilename(pageInfo) {
+    return buildExportFilename(pageInfo, 'txt');
+}
+
+function escapeCsvCell(value) {
+    let cell = String(value ?? '');
+    if (/^[\t\r\n ]*[=+\-@]/.test(cell)) cell = `'${cell}`;
+    return `"${cell.replace(/"/g, '""')}"`;
+}
+
+function createExportArtifact(pageInfo, format = 'txt', collectedAt = new Date()) {
     const urls = uniquePreserveOrder(pageInfo?.urls || []);
     if (!urls.length) throw new Error('NO_LINKS');
 
-    const content = `${urls.join('\n')}\n`;
-    const objectUrl = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+    const normalizedFormat = String(format || '').toLowerCase();
+    if (!['txt', 'json', 'csv'].includes(normalizedFormat)) throw new Error('UNSUPPORTED_EXPORT_FORMAT');
+
+    const metadata = {
+        source: String(pageInfo?.provider || 'unknown'),
+        page: String(pageInfo?.pageUrl || ''),
+        title: String(pageInfo?.title || '').trim(),
+        collectedAt: new Date(collectedAt).toISOString(),
+        links: urls,
+    };
+    let content;
+    let mimeType;
+
+    if (normalizedFormat === 'json') {
+        content = `${JSON.stringify(metadata, null, 4)}\n`;
+        mimeType = 'application/json;charset=utf-8';
+    } else if (normalizedFormat === 'csv') {
+        const header = ['source', 'page', 'title', 'collectedAt', 'url'];
+        const rows = urls.map(url => [
+            metadata.source,
+            metadata.page,
+            metadata.title,
+            metadata.collectedAt,
+            url,
+        ]);
+        content = `${[header, ...rows].map(row => row.map(escapeCsvCell).join(',')).join('\r\n')}\r\n`;
+        mimeType = 'text/csv;charset=utf-8';
+    } else {
+        content = `${urls.join('\n')}\n`;
+        mimeType = 'text/plain;charset=utf-8';
+    }
+
+    return {
+        content,
+        filename: buildExportFilename(pageInfo, normalizedFormat),
+        mimeType,
+    };
+}
+
+async function exportPageInfo(pageInfo, format = 'txt') {
+    const artifact = createExportArtifact(pageInfo, format);
+    const objectUrl = URL.createObjectURL(new Blob([artifact.content], { type: artifact.mimeType }));
 
     try {
         await new Promise((resolve, reject) => {
             chrome.downloads.download(
                 {
                     url: objectUrl,
-                    filename: buildTxtFilename(pageInfo),
+                    filename: artifact.filename,
                     saveAs: true,
                     conflictAction: 'uniquify',
                 },
@@ -573,13 +640,19 @@ async function exportTxt(pageInfo) {
         });
 
         setBadge('Ready');
-        setStatus(`Exported ${urls.length} ${urls.length === 1 ? 'link' : 'links'}.`, 'success');
+        const linkCount = uniquePreserveOrder(pageInfo?.urls || []).length;
+        const formatLabel = String(format).toLowerCase() === 'txt' ? '' : ` as ${String(format).toUpperCase()}`;
+        setStatus(`Exported ${linkCount} ${linkCount === 1 ? 'link' : 'links'}${formatLabel}.`, 'success');
     } catch (error) {
         setBadge('Error', 'danger');
         setStatus('Export failed.', 'error');
     } finally {
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     }
+}
+
+async function exportTxt(pageInfo) {
+    return exportPageInfo(pageInfo, 'txt');
 }
 
 async function sendToPineFetch(pageInfo) {

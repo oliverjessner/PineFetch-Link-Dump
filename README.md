@@ -1,6 +1,6 @@
 # PineFetch Link Dump
 
-This extension detects video links on the current page and can either export them as a TXT file or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
+This extension detects video links on the current page and can either export them as TXT, JSON, or CSV files or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
 
 See the [changelog](docs/changelog.md) for release notes and version history.
 
@@ -13,6 +13,8 @@ Supported sources:
 - X posts and loaded post links on timelines or media pages (including twitter.com links)
 - Facebook reels, videos, watch links, and loaded video links on pages
 - Direct HTTP(S) sources from standard HTML5 `<video>` elements
+
+JSON exports include source, page, title, collection timestamp, and links. CSV exports contain one link per row with the same metadata columns for analysis workflows.
 
 ## Installation
 

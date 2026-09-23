@@ -127,3 +127,13 @@ test('buildTxtFilename selects single titles and list owner names', async () => 
     assert.equal(api.buildTxtFilename({ mode: 'list', ownerName: 'alice', collectionName: 'Reels' }), 'alice-Reels.txt');
     assert.equal(api.buildTxtFilename(null), 'video-profile-Videos.txt');
 });
+
+test('buildExportFilename uses the requested safe extension', async () => {
+    const { api } = await loadPopupTestApi();
+    const pageInfo = { mode: 'list', ownerName: 'alice', collectionName: 'Research.csv' };
+    assert.equal(api.buildExportFilename(pageInfo, 'json'), 'alice-Research.json');
+    assert.equal(api.buildExportFilename(pageInfo, 'csv'), 'alice-Research.csv');
+    assert.equal(api.sanitizeFilename('results.txt', 'json'), 'results.json');
+    assert.equal(api.sanitizeFilename('results.json', 'csv'), 'results.csv');
+    assert.equal(api.sanitizeFilename('results', 'exe'), 'results.txt');
+});

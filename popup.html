@@ -64,6 +64,26 @@
                 min-width: 0;
             }
 
+            .pf-export-controls {
+                flex: 1 1 auto;
+                flex-wrap: nowrap;
+                min-width: 0;
+            }
+
+            .pf-export-format {
+                width: 82px;
+                min-height: var(--pf-control-height);
+                flex: 0 0 82px;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+
+            .pf-export-controls .pf-btn {
+                border-left: 0;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+
             .pf-view-toggle {
                 width: 100%;
             }
@@ -220,9 +240,17 @@
                         <button class="pf-btn pf-btn-primary pf-grow pf-non-select" id="pfSendButton" type="button">
                             Send to PineFetch
                         </button>
-                        <button class="pf-btn pf-btn-ghost pf-grow pf-non-select" id="pfExportButton" type="button">
-                            Export TXT
-                        </button>
+                        <div class="pf-row pf-export-controls">
+                            <label class="pf-visually-hidden" for="pfExportFormat">Export format</label>
+                            <select class="pf-select pf-export-format" id="pfExportFormat" aria-label="Export format">
+                                <option value="txt">TXT</option>
+                                <option value="json">JSON</option>
+                                <option value="csv">CSV</option>
+                            </select>
+                            <button class="pf-btn pf-btn-ghost pf-grow pf-non-select" id="pfExportButton" type="button">
+                                Export TXT
+                            </button>
+                        </div>
                     </div>
                 </section>
 
