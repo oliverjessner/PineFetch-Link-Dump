@@ -32,7 +32,7 @@ JSON exports include source, page, title, collection timestamp, link count, and 
 http://127.0.1:2255
 ```
 
-![](/assets/images/settings_tiktok.webp)
+![PineFetch endpoint and secret settings](/assets/images/settings_youtube.webp)
 
 ## Used Endpoints
 
@@ -129,14 +129,18 @@ prove Chrome's permission behavior on arbitrary sites.
 
 ## Look and feel
 
-### Youtube
+### YouTube
 
-![](/assets/images/send_youtube.webp)
+![Sending YouTube video links to PineFetch](/assets/images/send_youtube.webp)
 
 ### Instagram
 
-![](/assets/images/send_instagram.webp)
+![Sending Instagram reel links to PineFetch](/assets/images/send_instagram.webp)
 
 ### TikTok
 
-![](/assets/images/send_tiktok.webp)
+![Sending TikTok video links to PineFetch](/assets/images/send_tikok.webp)
+
+### Facebook
+
+![Sending Facebook reel links to PineFetch](/assets/images/send_facebook.webp)
