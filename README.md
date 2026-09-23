@@ -2,6 +2,8 @@
 
 This extension detects video links on the current page and can either export them as a TXT file or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
 
+See the [changelog](docs/changelog.md) for release notes and version history.
+
 Supported sources:
 
 - YouTube videos, shorts, live videos, channels, and list pages
