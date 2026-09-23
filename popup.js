@@ -582,6 +582,7 @@ function createExportArtifact(pageInfo, format = 'txt', collectedAt = new Date()
         page: String(pageInfo?.pageUrl || ''),
         title: String(pageInfo?.title || '').trim(),
         collectedAt: new Date(collectedAt).toISOString(),
+        amountOfLinks: urls.length,
         links: urls,
     };
     let content;

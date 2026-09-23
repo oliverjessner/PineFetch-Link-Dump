@@ -14,7 +14,7 @@ Supported sources:
 - Facebook reels, videos, watch links, and loaded video links on pages
 - Direct HTTP(S) sources from standard HTML5 `<video>` elements
 
-JSON exports include source, page, title, collection timestamp, and links. CSV exports contain one link per row with the same metadata columns for analysis workflows.
+JSON exports include source, page, title, collection timestamp, link count, and links. CSV exports contain one link per row with the same metadata columns for analysis workflows.
 
 ## Installation
 

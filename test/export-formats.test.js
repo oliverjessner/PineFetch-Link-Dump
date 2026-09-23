@@ -50,6 +50,7 @@ test('JSON artifact contains stable research metadata and unique links', async (
         page: 'https://www.tiktok.com/@research',
         title: 'Research, "quotes"',
         collectedAt,
+        amountOfLinks: 2,
         links: [
             'https://www.tiktok.com/@research/video/1',
             'https://www.tiktok.com/@research/video/2',
