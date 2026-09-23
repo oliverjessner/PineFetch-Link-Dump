@@ -41,6 +41,5 @@ test('CI and project check scripts run tests and builds', async () => {
     assert.match(workflow, /push:/);
     assert.match(workflow, /pull_request:/);
     assert.match(workflow, /npm ci/);
-    assert.match(workflow, /npm test/);
-    assert.match(workflow, /npm run build/);
+    assert.match(workflow, /npm run check/);
 });

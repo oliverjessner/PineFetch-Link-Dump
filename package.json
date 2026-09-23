@@ -21,11 +21,13 @@
         "import:css": "cp node_modules/pinefetch-designsystem/dist/pinefetch.css vendor/",
         "test": "npm run generate:icons && node --test",
         "build": "npm run import:css && npm run generate:icons",
+        "package": "npm run check && node scripts/package-release.js",
         "check": "npm test && npm run build"
     },
     "devDependencies": {
-        "pinefetch-designsystem": "^0.2.0",
+        "archiver": "^8.0.0",
         "jsdom": "^30.1.1",
+        "pinefetch-designsystem": "^0.2.0",
         "sharp": "^0.35.4"
     }
 }
