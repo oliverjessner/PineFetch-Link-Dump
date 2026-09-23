@@ -9,9 +9,10 @@
         <style>
             html,
             body {
-                width: 420px;
-                min-width: 420px;
-                max-width: 420px;
+                --width: 445px;
+                width: var(--width);
+                min-width: var(--width);
+                max-width: var(--width);
                 min-height: 0;
                 overflow-x: hidden;
             }
@@ -21,8 +22,8 @@
             }
 
             .pf-popup-shell {
-                width: 420px;
-                max-width: 420px;
+                width: var(--width);
+                max-width: var(--width);
                 min-height: 0;
                 padding: var(--pf-space-3xl);
             }
@@ -219,12 +220,7 @@
                     </button>
                 </div>
 
-                <section
-                    class="pf-view-panel"
-                    id="pfSendPanel"
-                    role="tabpanel"
-                    aria-labelledby="pfSendTab"
-                >
+                <section class="pf-view-panel" id="pfSendPanel" role="tabpanel" aria-labelledby="pfSendTab">
                     <section class="pf-panel-soft pf-stack-sm" aria-label="Detected video links">
                         <header class="pf-toolbar" style="flex-direction: row">
                             <span class="pf-badge pf-badge-muted pf-non-select" id="pfPreviewMode">No links</span>
