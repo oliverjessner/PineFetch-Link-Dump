@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "PineFetch Link Dump",
+    "version": "1.1.1",
+    "minimum_chrome_version": "114",
+    "description": "Export YouTube, TikTok, Instagram, Reddit, X, Facebook, and direct video links or send them to a local PineFetch instance.",
+    "icons": {
+        "16": "assets/icons/icon-16.png",
+        "32": "assets/icons/icon-32.png",
+        "48": "assets/icons/icon-48.png",
+        "128": "assets/icons/icon-128.png"
+    },
+    "permissions": ["activeTab", "scripting", "downloads", "storage"],
+    "host_permissions": ["<all_urls>"],
+    "action": {
+        "default_title": "PineFetch Link Dump",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "assets/icons/icon-16.png",
+            "32": "assets/icons/icon-32.png",
+            "48": "assets/icons/icon-48.png",
+            "128": "assets/icons/icon-128.png"
+        }
+    }
+}

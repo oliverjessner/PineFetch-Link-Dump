@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>PineFetch Link Dump</title>
+        <link rel="icon" href="assets/images/logo.png" type="image/png" />
+        <link rel="stylesheet" href="vendor/oj-designsystem/styles.css" />
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body class="oj-root">
+        <main class="popup-shell">
+            <section class="oj-panel oj-stack" aria-labelledby="pfPopupTitle">
+                <header class="oj-toolbar popup-header">
+                    <div class="oj-inline oj-grow">
+                        <img class="popup-logo" src="assets/images/logo.png" alt="" />
+                        <h1 class="oj-heading-4" id="pfPopupTitle">PineFetch Link Dump</h1>
+                    </div>
+                </header>
+
+                <div class="oj-tabs" data-oj-tabs>
+                    <div class="oj-tab-list" role="tablist" aria-label="Popup view">
+                        <button
+                            class="oj-tab"
+                            id="pfSendTab"
+                            type="button"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="pfSendPanel"
+                            data-oj-view="send"
+                        >
+                            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send
+                        </button>
+                        <button
+                            class="oj-tab"
+                            id="pfSettingsTab"
+                            type="button"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="pfSettingsPanel"
+                            data-oj-view="settings"
+                            tabindex="-1"
+                        >
+                            <i class="fa-solid fa-gear" aria-hidden="true"></i> Settings
+                        </button>
+                    </div>
+
+                    <section class="oj-tab-panel oj-stack" id="pfSendPanel" role="tabpanel" aria-labelledby="pfSendTab">
+                        <section class="oj-panel oj-panel-compact oj-stack" aria-label="Detected video links">
+                            <header class="oj-toolbar">
+                                <button
+                                    class="oj-button oj-button-ghost oj-button-compact"
+                                    id="pfPreviewMode"
+                                    type="button"
+                                    aria-label="Copy detected links to clipboard"
+                                    data-oj-tooltip="Copy detected links to clipboard"
+                                    disabled
+                                >
+                                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                                    <span id="pfPreviewModeLabel">No links</span>
+                                </button>
+                                <div class="oj-cluster popup-page-context">
+                                    <span class="oj-badge" id="pfStateBadge">Idle</span>
+                                    <span class="oj-small oj-muted">Links: <span class="oj-mono" id="pfPreviewCount">0</span></span>
+                                </div>
+                            </header>
+
+                            <div class="oj-stack popup-preview" id="pfPreviewLinks" aria-live="polite" aria-atomic="true">
+                                <div class="oj-empty-state">
+                                    <i class="fa-solid fa-link oj-empty-state-icon" aria-hidden="true"></i>
+                                    <p class="oj-empty-state-description">No links found.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="oj-stack" aria-label="Actions">
+                            <button class="oj-button oj-button-primary" id="pfSendButton" type="button">
+                                <i class="fa-solid fa-paper-plane" id="pfSendButtonIcon" aria-hidden="true"></i>
+                                <span id="pfSendButtonLabel">Send to PineFetch</span>
+                            </button>
+                            <div class="oj-inline popup-export-controls">
+                                <div class="oj-dropdown popup-export-format" id="pfExportFormatDropdown" data-oj-dropdown>
+                                    <button
+                                        class="oj-button oj-button-secondary popup-export-trigger"
+                                        id="pfExportFormat"
+                                        type="button"
+                                        value="txt"
+                                        aria-label="Export format: TXT"
+                                        data-oj-dropdown-trigger
+                                    >
+                                        <span id="pfExportFormatLabel">TXT</span>
+                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                    <div
+                                        class="oj-menu"
+                                        id="pfExportFormatMenu"
+                                        role="menu"
+                                        aria-label="Export format"
+                                        data-oj-dropdown-menu
+                                        hidden
+                                    >
+                                        <button class="oj-menu-item" type="button" role="menuitemradio" aria-checked="true" data-oj-value="txt">
+                                            <i class="fa-solid fa-check" aria-hidden="true"></i> TXT
+                                        </button>
+                                        <button class="oj-menu-item" type="button" role="menuitemradio" aria-checked="false" data-oj-value="json">
+                                            <i class="fa-solid fa-check" aria-hidden="true" hidden></i> JSON
+                                        </button>
+                                        <button class="oj-menu-item" type="button" role="menuitemradio" aria-checked="false" data-oj-value="csv">
+                                            <i class="fa-solid fa-check" aria-hidden="true" hidden></i> CSV
+                                        </button>
+                                    </div>
+                                </div>
+                                <button class="oj-button oj-button-secondary oj-grow" id="pfExportButton" type="button">
+                                    <i class="fa-solid fa-file-export" aria-hidden="true"></i>
+                                    <span id="pfExportButtonLabel">Export TXT</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="pfFeedbackPanel">
+                            <p class="oj-status popup-feedback" id="pfStatusMessage" role="status" aria-live="polite" aria-atomic="true">Checking the current page...</p>
+                        </div>
+                    </section>
+
+                    <section
+                        class="oj-tab-panel oj-stack popup-settings-panel"
+                        id="pfSettingsPanel"
+                        role="tabpanel"
+                        aria-labelledby="pfSettingsTab"
+                        hidden
+                    >
+                        <div class="oj-stack popup-settings-fields" aria-label="PineFetch settings">
+                            <div class="oj-field">
+                                <label class="oj-label" for="pfEndpointInput">PineFetch Endpoint</label>
+                                <input
+                                    class="oj-input oj-mono"
+                                    id="pfEndpointInput"
+                                    type="url"
+                                    spellcheck="false"
+                                    autocomplete="off"
+                                    inputmode="url"
+                                    value="http://127.0.1:2255"
+                                />
+                            </div>
+
+                            <div class="oj-field">
+                                <label class="oj-label" for="pfSecretInput">PineFetch Secret</label>
+                                <input
+                                    class="oj-input oj-mono"
+                                    id="pfSecretInput"
+                                    type="password"
+                                    spellcheck="false"
+                                    autocomplete="off"
+                                    aria-describedby="pfSecretHelp pfSecretError"
+                                />
+                                <p class="oj-helper" id="pfSecretHelp">Use the secret from your PineFetch settings.</p>
+                                <p class="oj-helper oj-helper-error" id="pfSecretError" hidden>Enter your PineFetch secret, then try again.</p>
+                            </div>
+
+                        </div>
+
+                        <details class="oj-accordion" id="pfSupportedPlatforms">
+                            <summary id="pfSupportedNetworksTitle">Supported platforms</summary>
+                            <div class="oj-accordion-body">
+                                <div class="oj-cluster popup-platform-list" id="pfSupportedNetworks"></div>
+                            </div>
+                        </details>
+                    </section>
+                </div>
+
+                <footer class="oj-inline popup-footer">
+                    <span class="oj-small oj-muted oj-mono popup-version" id="pfVersionLabel" aria-label="Extension version"></span>
+                </footer>
+            </section>
+        </main>
+
+        <script src="providers/youtube.js" defer></script>
+        <script src="providers/tiktok.js" defer></script>
+        <script src="providers/instagram.js" defer></script>
+        <script src="providers/reddit.js" defer></script>
+        <script src="providers/x.js" defer></script>
+        <script src="providers/facebook.js" defer></script>
+        <script src="providers/standard-video.js" defer></script>
+        <script src="popup.js" type="module"></script>
+    </body>
+</html>

@@ -1,0 +1,76 @@
+:root {
+    --oj-accent: #70e5c8;
+    --popup-width: 445px;
+}
+
+html,
+body {
+    /* Chrome sizes the action popup from its content, so avoid viewport-based limits. */
+    width: var(--popup-width);
+    min-width: var(--popup-width);
+    max-width: var(--popup-width);
+    overflow-x: hidden;
+}
+
+.popup-shell {
+    padding: var(--oj-space-3);
+}
+
+.popup-header {
+    flex-wrap: nowrap;
+}
+
+.popup-logo {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    object-fit: contain;
+    border-radius: var(--oj-radius-md);
+}
+
+.popup-preview {
+    --oj-gap: var(--oj-space-2);
+}
+
+.popup-page-context {
+    --oj-gap: var(--oj-space-2);
+}
+
+.popup-settings-panel {
+    --oj-gap: var(--oj-space-5);
+}
+
+.popup-settings-fields {
+    --oj-gap: var(--oj-space-3);
+}
+
+.popup-platform-list {
+    --oj-gap: var(--oj-space-2);
+}
+
+.popup-feedback {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.popup-export-controls {
+    flex-wrap: wrap;
+}
+
+.popup-export-format {
+    flex: 0 0 100px;
+    width: 100px;
+}
+
+.popup-export-trigger {
+    width: 100%;
+    justify-content: space-between;
+}
+
+.popup-footer {
+    justify-content: flex-end;
+}
+
+.popup-version {
+    flex: 0 0 auto;
+}
