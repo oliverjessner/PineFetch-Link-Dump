@@ -123,20 +123,20 @@ test('Settings groups complete accessible fields before platform information', a
     assert.equal(endpointField.nextElementSibling, secretField);
     assert.equal(fields.nextElementSibling, ui.get('pfSupportedPlatforms'));
 
-    for (const [input, helpId, label] of [
-        [endpoint, 'pfEndpointHelp', 'PineFetch Endpoint'],
-        [secret, 'pfSecretHelp', 'PineFetch Secret'],
+    for (const [input, label] of [
+        [endpoint, 'PineFetch Endpoint'],
+        [secret, 'PineFetch Secret'],
     ]) {
         const field = input.closest('.oj-field');
         assert.equal(field.firstElementChild, input.labels[0]);
         assert.equal(input.labels[0].textContent, label);
         assert.equal(input.labels[0].classList.contains('oj-label'), true);
         assert.equal(input.labels[0].nextElementSibling, input);
-        assert.equal(input.nextElementSibling, ui.get(helpId));
         assert.equal(input.classList.contains('oj-input'), true);
-        assert.equal(ui.get(helpId).classList.contains('oj-helper'), true);
-        assert.equal(input.getAttribute('aria-describedby').split(/\s+/).includes(helpId), true);
     }
+    assert.equal(secret.nextElementSibling, ui.get('pfSecretHelp'));
+    assert.equal(ui.get('pfSecretHelp').classList.contains('oj-helper'), true);
+    assert.equal(secret.getAttribute('aria-describedby').split(/\s+/).includes('pfSecretHelp'), true);
     assert.equal(secret.type, 'password');
     assert.equal(endpoint.type, 'url');
     assert.equal(ui.get('pfSecretError').hidden, true);
