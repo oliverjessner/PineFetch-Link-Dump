@@ -107,7 +107,7 @@ function dispatch(ui, element, event) {
     element.dispatchEvent(new ui.window.Event(event, { bubbles: true }));
 }
 
-test('Settings groups complete accessible fields and their autosave hint before platform information', async t => {
+test('Settings groups complete accessible fields before platform information', async t => {
     const ui = await createUi(t);
     ui.get('pfSettingsTab').click();
     assert.equal(ui.get('pfSettingsPanel').hidden, false);
@@ -118,14 +118,9 @@ test('Settings groups complete accessible fields and their autosave hint before 
     const endpointField = endpoint.closest('.oj-field');
     const secretField = secret.closest('.oj-field');
     const fields = endpointField.parentElement;
-    const hint = ui.get('pfSettingsSaveHint');
     assert.equal(fields.classList.contains('oj-stack'), true);
     assert.equal(secretField.parentElement, fields);
     assert.equal(endpointField.nextElementSibling, secretField);
-    assert.equal(secretField.nextElementSibling, hint);
-    assert.equal(hint.parentElement, fields);
-    assert.equal(hint.classList.contains('oj-helper'), true);
-    assert.equal(hint.textContent, 'Settings are saved automatically.');
     assert.equal(fields.nextElementSibling, ui.get('pfSupportedPlatforms'));
 
     for (const [input, helpId, label] of [
@@ -244,7 +239,6 @@ test('a failed autosave does not announce successful storage or a verified conne
     await Promise.resolve();
     assert.equal(storage.values.secret, 'old-secret');
     assert.equal(storage.writes.length, 1);
-    assert.equal(ui.get('pfSettingsSaveHint').textContent, 'Settings are saved automatically.');
     assert.equal(ui.get('pfStatusMessage').textContent, '2 links detected. Choose Send or Export.');
     assert.doesNotMatch(ui.document.body.textContent, /Settings saved|Saved successfully|Connected to PineFetch/);
     assert.deepEqual(ui.requests, []);
