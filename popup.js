@@ -22,7 +22,7 @@ async function initPopup() {
     bindEvents();
     renderSupportedNetworks();
     setBadge('Idle', 'muted');
-    setStatus('Ready.');
+    setStatus('Checking the current page...');
     setVersionLabel(await loadPackageVersion());
 
     const settings = await getStoredSettings();
@@ -234,7 +234,10 @@ async function writeTextToClipboard(text) {
 
 function setStatus(message, type = 'default') {
     elements.statusMessage.textContent = message;
-    elements.statusMessage.className = 'oj-inline-message oj-grow';
+    elements.statusMessage.className = 'oj-status popup-feedback';
+    if (['success', 'warning', 'error', 'danger', 'info'].includes(type)) {
+        elements.statusMessage.classList.add(`oj-status-${type === 'error' ? 'danger' : type}`);
+    }
     if (type === 'default') elements.statusMessage.removeAttribute('data-oj-kind');
     else elements.statusMessage.dataset.ojKind = type;
 }
@@ -449,11 +452,11 @@ function setAnalysisState(pageInfo) {
 
     if ((pageInfo.mode === 'single' || pageInfo.mode === 'list') && pageInfo.urls.length) {
         setBadge(pageInfo.providerLabel);
-        setStatus('Ready.', 'success');
+        setStatus(`${formatLinkCount(pageInfo.urls.length)} detected. Choose Send or Export.`, 'success');
         return;
     }
 
-    setBadge('Ready', 'warning');
+    setBadge('No links', 'warning');
     setStatus(`No ${pageInfo.providerLabel} links found. Scroll the page to load more videos.`, 'warning');
 }
 

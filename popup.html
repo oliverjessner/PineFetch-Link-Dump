@@ -11,12 +11,11 @@
     <body class="oj-root">
         <main class="popup-shell">
             <section class="oj-panel oj-stack" aria-labelledby="pfPopupTitle">
-                <header class="oj-section-header popup-header">
+                <header class="oj-toolbar popup-header">
                     <div class="oj-inline oj-grow">
                         <img class="popup-logo" src="assets/images/logo.png" alt="" />
                         <h1 class="oj-heading-4" id="pfPopupTitle">PineFetch Link Dump</h1>
                     </div>
-                    <span class="oj-badge" id="pfStateBadge">Idle</span>
                 </header>
 
                 <div class="oj-tabs" data-oj-tabs>
@@ -60,7 +59,10 @@
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
                                     <span id="pfPreviewModeLabel">No links</span>
                                 </button>
-                                <span class="oj-small oj-muted">Links: <span class="oj-mono" id="pfPreviewCount">0</span></span>
+                                <div class="oj-cluster popup-page-context">
+                                    <span class="oj-badge" id="pfStateBadge">Idle</span>
+                                    <span class="oj-small oj-muted">Links: <span class="oj-mono" id="pfPreviewCount">0</span></span>
+                                </div>
                             </header>
 
                             <div class="oj-stack popup-preview" id="pfPreviewLinks" aria-live="polite" aria-atomic="true">
@@ -114,16 +116,20 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div id="pfFeedbackPanel">
+                            <p class="oj-status popup-feedback" id="pfStatusMessage" role="status" aria-live="polite" aria-atomic="true">Checking the current page...</p>
+                        </div>
                     </section>
 
                     <section
-                        class="oj-tab-panel oj-stack"
+                        class="oj-tab-panel oj-stack popup-settings-panel"
                         id="pfSettingsPanel"
                         role="tabpanel"
                         aria-labelledby="pfSettingsTab"
                         hidden
                     >
-                        <div class="oj-stack" aria-label="PineFetch settings">
+                        <div class="oj-stack popup-settings-fields" aria-label="PineFetch settings">
                             <div class="oj-field">
                                 <label class="oj-label" for="pfEndpointInput">PineFetch Endpoint</label>
                                 <input
@@ -150,21 +156,22 @@
                                     aria-describedby="pfSecretHelp pfSecretError"
                                 />
                                 <p class="oj-helper" id="pfSecretHelp">Use the secret from your PineFetch settings.</p>
-                                <p class="oj-helper oj-helper-error" id="pfSecretError" hidden>Enter your PineFetch secret.</p>
+                                <p class="oj-helper oj-helper-error" id="pfSecretError" hidden>Enter your PineFetch secret, then try again.</p>
                             </div>
+
+                            <p class="oj-helper" id="pfSettingsSaveHint">Settings are saved automatically.</p>
                         </div>
 
-                        <section class="oj-panel oj-panel-compact oj-stack" aria-labelledby="pfSupportedNetworksTitle">
-                            <h2 class="oj-label" id="pfSupportedNetworksTitle">Supported networks</h2>
-                            <div class="oj-cluster" id="pfSupportedNetworks"></div>
-                        </section>
-
-                        <p class="oj-helper">Settings are saved automatically.</p>
+                        <details class="oj-accordion" id="pfSupportedPlatforms">
+                            <summary id="pfSupportedNetworksTitle">Supported platforms</summary>
+                            <div class="oj-accordion-body">
+                                <div class="oj-cluster popup-platform-list" id="pfSupportedNetworks"></div>
+                            </div>
+                        </details>
                     </section>
                 </div>
 
-                <footer class="oj-inline popup-footer" id="pfFeedbackPanel">
-                    <p class="oj-inline-message oj-grow" id="pfStatusMessage" role="status" aria-live="polite" aria-atomic="true">Ready.</p>
+                <footer class="oj-inline popup-footer">
                     <span class="oj-small oj-muted oj-mono popup-version" id="pfVersionLabel" aria-label="Extension version"></span>
                 </footer>
             </section>

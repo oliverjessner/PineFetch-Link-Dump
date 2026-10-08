@@ -2,6 +2,7 @@
 
 - moving to https://github.com/oliverjessner/oj-designsystem
 - Use the OJ dropdown for TXT, JSON, and CSV export formats, including keyboard navigation and selection indicators.
+- Group Settings fields with their autosave hint, collapse supported platforms into a native OJ accordion, and keep page badges and link-detection feedback in Send.
 
 # v1.1.0
 

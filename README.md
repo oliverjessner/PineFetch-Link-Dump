@@ -2,6 +2,8 @@
 
 This extension detects video links on the current page and can either export them as TXT, JSON, or CSV files or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
 
+![PineFetch Link Dump open on a YouTube video in Chrome](assets/images/web_browser.webp)
+
 See the [changelog](docs/changelog.md) for release notes and version history.
 
 Supported sources:
@@ -48,7 +50,7 @@ OJ provides the popup's panels, buttons, fields, badges, empty states, persisten
 http://127.0.1:2255
 ```
 
-![PineFetch endpoint and secret settings](/assets/images/settings_youtube.webp)
+![Settings tab with the PineFetch endpoint, secret, and supported platforms](assets/images/settings.png)
 
 ## Used Endpoints
 
@@ -145,18 +147,4 @@ prove Chrome's permission behavior on arbitrary sites.
 
 ## Look and feel
 
-### YouTube
-
-![Sending YouTube video links to PineFetch](/assets/images/send_youtube.webp)
-
-### Instagram
-
-![Sending Instagram reel links to PineFetch](/assets/images/send_instagram.webp)
-
-### TikTok
-
-![Sending TikTok video links to PineFetch](/assets/images/send_tikok.webp)
-
-### Facebook
-
-![Sending Facebook reel links to PineFetch](/assets/images/send_facebook.webp)
+![Send tab with a detected YouTube video, Send to PineFetch, and export controls](assets/images/send.png)

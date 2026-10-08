@@ -5,6 +5,7 @@
 
 html,
 body {
+    /* Chrome sizes the action popup from its content, so avoid viewport-based limits. */
     width: var(--popup-width);
     min-width: var(--popup-width);
     max-width: var(--popup-width);
@@ -17,7 +18,6 @@ body {
 
 .popup-header {
     flex-wrap: nowrap;
-    margin-block-end: 0;
 }
 
 .popup-logo {
@@ -30,6 +30,27 @@ body {
 
 .popup-preview {
     --oj-gap: var(--oj-space-2);
+}
+
+.popup-page-context {
+    --oj-gap: var(--oj-space-2);
+}
+
+.popup-settings-panel {
+    --oj-gap: var(--oj-space-5);
+}
+
+.popup-settings-fields {
+    --oj-gap: var(--oj-space-3);
+}
+
+.popup-platform-list {
+    --oj-gap: var(--oj-space-2);
+}
+
+.popup-feedback {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .popup-export-controls {
@@ -47,9 +68,7 @@ body {
 }
 
 .popup-footer {
-    align-items: flex-start;
-    padding-block-start: var(--oj-space-3);
-    border-block-start: 1px solid var(--oj-border);
+    justify-content: flex-end;
 }
 
 .popup-version {
