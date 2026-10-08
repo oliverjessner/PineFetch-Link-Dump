@@ -1,3 +1,15 @@
+# v1.1.1
+
+- moving to https://github.com/oliverjessner/oj-designsystem
+- Use the OJ dropdown for TXT, JSON, and CSV export formats, including keyboard navigation and selection indicators.
+
+# v1.1.0
+
+- Replace pinefetch-designsystem with oj-designsystem 0.1.0, including local fonts, Font Awesome icons, and license notices.
+- Use OJ panels, controls, native keyboard-accessible tabs, busy indicators, empty states, and semantic status feedback.
+- Make copying detected links a native button and show missing-secret validation directly beside the input.
+- Include the complete design-system distribution in the extension build and release archive.
+
 # v1.0.0
 
 - Support YouTube, TikTok, Instagram, Reddit, X, Facebook, and generic HTML5 video pages.

@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { readFile } = require('node:fs/promises');
 const { resolve } = require('node:path');
 const test = require('node:test');
+const { JSDOM } = require('jsdom');
 const { createChromeMock, createPopupElements, loadPopupTestApi } = require('../test-utils/popup.js');
 
 const collectedAt = '2026-09-23T12:34:56.000Z';
@@ -21,11 +22,37 @@ const pageInfo = {
     ],
 };
 
-test('popup offers TXT, JSON, and CSV export formats', async () => {
+test('popup offers TXT, JSON, and CSV through an accessible OJ dropdown', async () => {
     const html = await readFile(resolve('popup.html'), 'utf8');
-    assert.match(html, /<select[^>]+id="pfExportFormat"/);
-    for (const format of ['txt', 'json', 'csv']) {
-        assert.match(html, new RegExp(`<option value="${format}">${format.toUpperCase()}</option>`));
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    try {
+        const dropdown = document.getElementById('pfExportFormatDropdown');
+        assert.equal(dropdown.classList.contains('oj-dropdown'), true);
+        assert.equal(dropdown.hasAttribute('data-oj-dropdown'), true);
+        const trigger = document.getElementById('pfExportFormat');
+        assert.equal(trigger.tagName, 'BUTTON');
+        assert.equal(trigger.type, 'button');
+        assert.equal(trigger.hasAttribute('data-oj-dropdown-trigger'), true);
+        assert.equal(trigger.value, 'txt');
+        assert.equal(trigger.getAttribute('aria-label'), 'Export format: TXT');
+        const menu = document.getElementById('pfExportFormatMenu');
+        assert.equal(menu.classList.contains('oj-menu'), true);
+        assert.equal(menu.hasAttribute('data-oj-dropdown-menu'), true);
+        assert.equal(menu.getAttribute('role'), 'menu');
+        assert.equal(menu.getAttribute('aria-label'), 'Export format');
+        assert.equal(menu.hidden, true);
+        const items = Array.from(menu.querySelectorAll('.oj-menu-item'));
+        assert.deepEqual(items.map(item => item.dataset.ojValue), ['txt', 'json', 'csv']);
+        for (const item of items) {
+            assert.equal(item.tagName, 'BUTTON');
+            assert.equal(item.type, 'button');
+            assert.equal(item.getAttribute('role'), 'menuitemradio');
+            assert.equal(item.getAttribute('aria-checked'), String(item.dataset.ojValue === 'txt'));
+            assert.equal(item.textContent.trim(), item.dataset.ojValue.toUpperCase());
+        }
+    } finally {
+        dom.window.close();
     }
 });
 
@@ -122,17 +149,19 @@ test('exportPageInfo downloads JSON and CSV with matching content types', async 
     }
 });
 
-test('format selector updates label and loading state', async () => {
+test('format trigger updates the export label and disables every format while loading', async () => {
     const { api } = await loadPopupTestApi();
     const elements = createPopupElements();
     api.setElements(elements);
-    elements.exportFormatSelect.value = 'json';
+    elements.exportFormatTrigger.value = 'json';
     api.updateExportButtonLabel();
     assert.equal(elements.exportButton.textContent, 'Export JSON');
     api.setLoading(true, 'export');
-    assert.equal(elements.exportFormatSelect.disabled, true);
+    assert.equal(elements.exportFormatTrigger.disabled, true);
+    assert.equal(elements.exportFormatItems.every(item => item.disabled), true);
     api.setLoading(false, 'export');
-    assert.equal(elements.exportFormatSelect.disabled, false);
-    elements.exportFormatSelect.value = 'unexpected';
+    assert.equal(elements.exportFormatTrigger.disabled, false);
+    assert.equal(elements.exportFormatItems.every(item => !item.disabled), true);
+    elements.exportFormatTrigger.value = 'unexpected';
     assert.equal(api.getSelectedExportFormat(), 'txt');
 });

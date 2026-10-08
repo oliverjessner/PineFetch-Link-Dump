@@ -15,10 +15,21 @@ const version = manifest.version;
 const distDir = path.join(root, 'dist');
 const outputPath = path.join(distDir, `PineFetch-Link-Dump-${version}.zip`);
 
+function directoryFiles(relativeDir) {
+    return fs.readdirSync(path.join(root, relativeDir), { withFileTypes: true })
+        .flatMap(entry => {
+            const relativePath = `${relativeDir}/${entry.name}`;
+            if (entry.isDirectory()) return directoryFiles(relativePath);
+            if (entry.isFile()) return [relativePath];
+            throw new Error(`Unsupported release file type: ${relativePath}`);
+        });
+}
+
 const files = [
     'manifest.json',
     'popup.html',
     'popup.js',
+    'popup.css',
 
     'providers/facebook.js',
     'providers/instagram.js',
@@ -28,7 +39,7 @@ const files = [
     'providers/x.js',
     'providers/youtube.js',
 
-    'vendor/pinefetch.css',
+    ...directoryFiles('vendor/oj-designsystem'),
 
     'assets/icons/icon-16.png',
     'assets/icons/icon-32.png',

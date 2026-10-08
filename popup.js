@@ -1,4 +1,4 @@
-'use strict';
+import { initOJ } from './vendor/oj-designsystem/index.js';
 
 const DEFAULT_ENDPOINT_BASE = 'http://127.0.1:2255';
 const SINGLE_LINK_PATH = '/addVideoLinkToQueue/';
@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', initPopup);
 
 async function initPopup() {
     cacheElements();
+    initDesignSystem();
     bindEvents();
-    switchPopupView('send');
     renderSupportedNetworks();
     setBadge('Idle', 'muted');
     setStatus('Ready.');
@@ -31,31 +31,41 @@ async function initPopup() {
     currentPageInfo = await analyzeCurrentTab();
 }
 
+function initDesignSystem() {
+    const cleanup = initOJ(document.body);
+    window.addEventListener('pagehide', cleanup, { once: true });
+    return cleanup;
+}
+
 function cacheElements() {
     elements.endpointInput = document.getElementById('pfEndpointInput');
     elements.secretInput = document.getElementById('pfSecretInput');
-    elements.viewTabs = Array.from(document.querySelectorAll('[data-popup-view]'));
+    elements.viewTabs = Array.from(document.querySelectorAll('[data-oj-view]'));
     elements.sendPanel = document.getElementById('pfSendPanel');
     elements.settingsPanel = document.getElementById('pfSettingsPanel');
     elements.supportedNetworks = document.getElementById('pfSupportedNetworks');
     elements.sendButton = document.getElementById('pfSendButton');
+    elements.sendButtonLabel = document.getElementById('pfSendButtonLabel');
+    elements.sendButtonIcon = document.getElementById('pfSendButtonIcon');
     elements.exportButton = document.getElementById('pfExportButton');
-    elements.exportFormatSelect = document.getElementById('pfExportFormat');
+    elements.exportButtonLabel = document.getElementById('pfExportButtonLabel');
+    elements.exportFormatTrigger = document.getElementById('pfExportFormat');
+    elements.exportFormatDropdown = document.getElementById('pfExportFormatDropdown');
+    elements.exportFormatMenu = document.getElementById('pfExportFormatMenu');
+    elements.exportFormatItems = Array.from(elements.exportFormatMenu.querySelectorAll('[data-oj-value]'));
+    elements.exportFormatLabel = document.getElementById('pfExportFormatLabel');
     elements.stateBadge = document.getElementById('pfStateBadge');
     elements.previewMode = document.getElementById('pfPreviewMode');
+    elements.previewModeLabel = document.getElementById('pfPreviewModeLabel');
     elements.previewCount = document.getElementById('pfPreviewCount');
     elements.previewLinks = document.getElementById('pfPreviewLinks');
     elements.statusMessage = document.getElementById('pfStatusMessage');
     elements.feedbackPanel = document.getElementById('pfFeedbackPanel');
     elements.versionLabel = document.getElementById('pfVersionLabel');
+    elements.secretError = document.getElementById('pfSecretError');
 }
 
 function bindEvents() {
-    for (const tab of elements.viewTabs) {
-        tab.addEventListener('click', handleViewTabClick);
-        tab.addEventListener('keydown', handleViewTabKeydown);
-    }
-
     elements.endpointInput.addEventListener('input', scheduleSettingsSave);
     elements.secretInput.addEventListener('input', scheduleSettingsSave);
     elements.secretInput.addEventListener('input', clearSecretValidation);
@@ -63,47 +73,15 @@ function bindEvents() {
     elements.secretInput.addEventListener('change', persistCurrentSettings);
     elements.sendButton.addEventListener('click', handleSendClick);
     elements.exportButton.addEventListener('click', handleExportClick);
-    elements.exportFormatSelect.addEventListener('change', updateExportButtonLabel);
+    elements.exportFormatDropdown.addEventListener('oj:select', handleExportFormatSelect);
     elements.previewMode.addEventListener('click', copyCurrentPreviewLinks);
-    elements.previewMode.addEventListener('keydown', handlePreviewModeCopyKeydown);
-}
-
-function handleViewTabClick(event) {
-    switchPopupView(event.currentTarget.dataset.popupView);
-}
-
-function handleViewTabKeydown(event) {
-    const supportedKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
-    if (!supportedKeys.includes(event.key)) return;
-
-    event.preventDefault();
-    const currentIndex = elements.viewTabs.indexOf(event.currentTarget);
-    let nextIndex = currentIndex;
-
-    if (event.key === 'ArrowLeft') {
-        nextIndex = (currentIndex - 1 + elements.viewTabs.length) % elements.viewTabs.length;
-    }
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % elements.viewTabs.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = elements.viewTabs.length - 1;
-
-    switchPopupView(elements.viewTabs[nextIndex].dataset.popupView, true);
 }
 
 function switchPopupView(view, focusTab = false) {
-    if (!['send', 'settings'].includes(view)) return;
-
-    for (const tab of elements.viewTabs) {
-        const isActive = tab.dataset.popupView === view;
-        tab.classList.toggle('pf-is-active', isActive);
-        tab.setAttribute('aria-selected', String(isActive));
-        tab.tabIndex = isActive ? 0 : -1;
-
-        if (isActive && focusTab) tab.focus();
-    }
-
-    elements.sendPanel.hidden = view !== 'send';
-    elements.settingsPanel.hidden = view !== 'settings';
+    const tab = elements.viewTabs.find(tab => tab.dataset.ojView === view);
+    if (!tab) return;
+    tab.click();
+    if (focusTab) tab.focus();
 }
 
 function getSupportedNetworkLabels(providers = globalThis.PineFetchLinkProviders || []) {
@@ -116,7 +94,7 @@ function getSupportedNetworkLabels(providers = globalThis.PineFetchLinkProviders
 function renderSupportedNetworks() {
     const badges = getSupportedNetworkLabels().map(label => {
         const badge = document.createElement('span');
-        badge.className = 'pf-badge pf-non-select';
+        badge.className = 'oj-badge';
         badge.textContent = label;
         return badge;
     });
@@ -169,7 +147,7 @@ async function handleSendClick() {
 async function handleExportClick() {
     const format = getSelectedExportFormat();
     setLoading(true, 'export');
-    elements.exportButton.textContent = `Exporting ${format.toUpperCase()}...`;
+    (elements.exportButtonLabel || elements.exportButton).textContent = `Exporting ${format.toUpperCase()}...`;
     setStatus(`Preparing the ${format.toUpperCase()} export...`);
 
     try {
@@ -189,18 +167,28 @@ async function handleExportClick() {
 }
 
 function getSelectedExportFormat() {
-    const format = String(elements.exportFormatSelect?.value || 'txt').toLowerCase();
+    const format = String(elements.exportFormatTrigger?.value || 'txt').toLowerCase();
     return ['txt', 'json', 'csv'].includes(format) ? format : 'txt';
 }
 
-function updateExportButtonLabel() {
-    elements.exportButton.textContent = `Export ${getSelectedExportFormat().toUpperCase()}`;
+function handleExportFormatSelect(event) {
+    if (isLoading || event.target !== elements.exportFormatDropdown) return;
+    const format = String(event.detail?.value || '').toLowerCase();
+    if (!['txt', 'json', 'csv'].includes(format)) return;
+
+    elements.exportFormatTrigger.value = format;
+    elements.exportFormatLabel.textContent = format.toUpperCase();
+    elements.exportFormatTrigger.setAttribute('aria-label', `Export format: ${format.toUpperCase()}`);
+    for (const item of elements.exportFormatItems) {
+        const selected = item.dataset.ojValue === format;
+        item.setAttribute('aria-checked', String(selected));
+        item.querySelector('.fa-check').hidden = !selected;
+    }
+    updateExportButtonLabel();
 }
 
-async function handlePreviewModeCopyKeydown(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    await copyCurrentPreviewLinks();
+function updateExportButtonLabel() {
+    (elements.exportButtonLabel || elements.exportButton).textContent = `Export ${getSelectedExportFormat().toUpperCase()}`;
 }
 
 async function copyCurrentPreviewLinks() {
@@ -246,27 +234,25 @@ async function writeTextToClipboard(text) {
 
 function setStatus(message, type = 'default') {
     elements.statusMessage.textContent = message;
-    elements.statusMessage.className = 'pf-status';
-    if (type !== 'default') elements.statusMessage.classList.add(`pf-status-${type}`);
-
-    if (elements.feedbackPanel) {
-        elements.feedbackPanel.dataset.status = type;
-    }
+    elements.statusMessage.className = 'oj-inline-message oj-grow';
+    if (type === 'default') elements.statusMessage.removeAttribute('data-oj-kind');
+    else elements.statusMessage.dataset.ojKind = type;
 }
 
 function setBadge(label, type = 'default') {
     elements.stateBadge.textContent = label;
-    elements.stateBadge.className = 'pf-badge pf-non-select';
-    if (type !== 'default') elements.stateBadge.classList.add(`pf-badge-${type}`);
+    elements.stateBadge.className = 'oj-badge';
+    if (['accent', 'success', 'warning', 'danger', 'info'].includes(type)) {
+        elements.stateBadge.classList.add(`oj-badge-${type}`);
+    }
 }
 
 function setLoading(loading, action = '') {
     isLoading = loading;
     elements.sendButton.disabled = loading;
     elements.exportButton.disabled = loading;
-    if (elements.exportFormatSelect) elements.exportFormatSelect.disabled = loading;
-    elements.sendButton.classList.toggle('pf-btn-loading', loading && action === 'send');
-    elements.exportButton.classList.toggle('pf-btn-loading', loading && action === 'export');
+    if (elements.exportFormatTrigger) elements.exportFormatTrigger.disabled = loading;
+    for (const item of elements.exportFormatItems || []) item.disabled = loading;
     elements.sendButton.setAttribute('aria-busy', String(loading && action === 'send'));
     elements.exportButton.setAttribute('aria-busy', String(loading && action === 'export'));
 }
@@ -276,16 +262,20 @@ function setSendButtonState(state, count = 0) {
         default: 'Send to PineFetch',
         checking: 'Checking page...',
         sending: `Sending ${formatLinkCount(count)}...`,
-        success: `✓ Queued ${formatLinkCount(count)}`,
+        success: `Queued ${formatLinkCount(count)}`,
         secret: 'Enter secret',
         empty: 'No links found',
         error: 'Try again',
     };
 
-    elements.sendButton.textContent = labels[state] || labels.default;
-    elements.sendButton.dataset.state = state;
-    elements.sendButton.classList.toggle('pf-send-success', state === 'success');
-    elements.sendButton.classList.toggle('pf-send-error', ['secret', 'empty', 'error'].includes(state));
+    (elements.sendButtonLabel || elements.sendButton).textContent = labels[state] || labels.default;
+    elements.sendButton.dataset.ojState = state;
+    if (elements.sendButtonIcon) {
+        const icon = state === 'success' ? 'fa-check'
+            : ['secret', 'empty', 'error'].includes(state) ? 'fa-rotate-right' : 'fa-paper-plane';
+        elements.sendButtonIcon.className = `fa-solid ${icon}`;
+        elements.sendButtonIcon.hidden = ['checking', 'sending'].includes(state);
+    }
 }
 
 function getSendErrorState(reason) {
@@ -312,8 +302,9 @@ function scheduleSendButtonReset() {
 
 function clearSecretValidation() {
     elements.secretInput.removeAttribute('aria-invalid');
+    if (elements.secretError) elements.secretError.hidden = true;
 
-    if (elements.sendButton?.dataset.state === 'secret') {
+    if (elements.sendButton?.dataset.ojState === 'secret') {
         clearSendFeedbackTimer();
         setSendButtonState('default');
     }
@@ -467,38 +458,33 @@ function setAnalysisState(pageInfo) {
 }
 
 function renderPageInfo(pageInfo) {
-    elements.previewMode.textContent = getModeLabel(pageInfo);
-    elements.previewMode.className = 'pf-badge pf-non-select pf-copy-badge';
-    elements.previewMode.setAttribute('aria-disabled', String(!pageInfo.urls.length));
-    elements.previewMode.tabIndex = pageInfo.urls.length ? 0 : -1;
-    elements.previewMode.title = pageInfo.urls.length ? 'Copy links to clipboard' : 'No links to copy';
-
-    if (pageInfo.urls.length) {
-        elements.previewMode.setAttribute('role', 'button');
-        elements.previewMode.setAttribute(
-            'aria-label',
-            `Copy ${pageInfo.urls.length} ${pageInfo.urls.length === 1 ? 'link' : 'links'} to clipboard`,
-        );
-    } else {
-        elements.previewMode.removeAttribute('role');
-        elements.previewMode.removeAttribute('aria-label');
-        elements.previewMode.classList.add('pf-badge-muted');
-    }
+    (elements.previewModeLabel || elements.previewMode).textContent = getModeLabel(pageInfo);
+    elements.previewMode.disabled = !pageInfo.urls.length;
+    elements.previewMode.setAttribute(
+        'aria-label',
+        pageInfo.urls.length ? `Copy ${formatLinkCount(pageInfo.urls.length)} to clipboard` : 'No links to copy',
+    );
 
     elements.previewCount.textContent = String(pageInfo.urls.length);
     elements.previewLinks.replaceChildren();
 
     if (!pageInfo.urls.length) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'oj-empty-state';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-link oj-empty-state-icon';
+        icon.setAttribute('aria-hidden', 'true');
         const message = document.createElement('p');
-        message.className = 'pf-status';
+        message.className = 'oj-empty-state-description';
         message.textContent = 'No links found.';
-        elements.previewLinks.append(message);
+        emptyState.append(icon, message);
+        elements.previewLinks.append(emptyState);
         return;
     }
 
     for (const url of pageInfo.urls.slice(0, 3)) {
         const line = document.createElement('p');
-        line.className = 'pf-status pf-truncate';
+        line.className = 'oj-small oj-muted oj-mono oj-truncate';
         line.textContent = shortenUrl(url);
         line.title = url;
         elements.previewLinks.append(line);
@@ -664,13 +650,14 @@ async function sendToPineFetch(pageInfo) {
     if (!secret.trim()) {
         switchPopupView('settings');
         elements.secretInput.setAttribute('aria-invalid', 'true');
+        if (elements.secretError) elements.secretError.hidden = false;
         elements.secretInput.focus();
         setBadge('Error', 'danger');
         setStatus('Enter your PineFetch secret, then try again.', 'error');
         return { ok: false, reason: 'secret' };
     }
 
-    elements.secretInput.removeAttribute('aria-invalid');
+    clearSecretValidation();
 
     const urls = uniquePreserveOrder(pageInfo?.urls || []);
 
@@ -700,7 +687,7 @@ async function sendToPineFetch(pageInfo) {
         return response;
     }
 
-    setBadge('Queued');
+    setBadge('Queued', 'success');
     setStatus(`${formatLinkCount(urls.length)} queued successfully in PineFetch.`, 'success');
     return { ok: true, count: urls.length };
 }

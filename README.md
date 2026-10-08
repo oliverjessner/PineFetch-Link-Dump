@@ -24,6 +24,22 @@ JSON exports include source, page, title, collection timestamp, link count, and 
 4. Click "Load unpacked".
 5. Select the extension folder.
 
+## Development and packaging
+
+Use Node.js 22.12 or newer, then run:
+
+```sh
+npm ci
+npm run check
+npm run package
+```
+
+The popup uses [oj-designsystem](https://github.com/oliverjessner/oj-designsystem), pinned to version 0.1.0. `npm run build` copies its published CSS, JavaScript, Comfortaa and JetBrains Mono fonts, Font Awesome icons, and license notices into `vendor/oj-designsystem/`. These files are committed and included in the release ZIP, so the installed extension needs no Node runtime or font/icon CDN.
+
+OJ provides the popup's panels, buttons, fields, badges, empty states, persistent status messages, loading indicators, keyboard-accessible tabs and export-format dropdown, and copy-button tooltip. The popup initializes OJ after the DOM is ready and cleans up on `pagehide`. `popup.css` contains the popup layout and the PineFetch accent (`--oj-accent`); semantic success, warning, and error colors come from OJ independently.
+
+`npm run package` validates the extension and creates `dist/PineFetch-Link-Dump-<version>.zip`. Reload the unpacked extension in `chrome://extensions` after making changes.
+
 ## Configure PineFetch
 
 [PineFetch](https://oliverjessner.at/pinefetch/) must be running locally. The default endpoint is:
