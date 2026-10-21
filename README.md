@@ -1,150 +1,71 @@
-# PineFetch Link Dump
+<p align="center">
+  <img src="assets/images/logo.png" alt="PineFetch Link Dump logo" width="128" height="128" />
+</p>
 
-This extension detects video links on the current page and can either export them as TXT, JSON, or CSV files or send them directly to a local [PineFetch](https://oliverjessner.at/pinefetch/) instance.
+# PineFetch Link Dump 🍍
 
-![PineFetch Link Dump open on a YouTube video in Chrome](assets/images/web_browser.webp)
+[![Dependabot Updates](https://github.com/oliverjessner/PineFetch-Link-Dump/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/oliverjessner/PineFetch-Link-Dump/actions/workflows/dependabot/dependabot-updates) [![CI](https://github.com/oliverjessner/PineFetch-Link-Dump/actions/workflows/test.yml/badge.svg)](https://github.com/oliverjessner/PineFetch-Link-Dump/actions/workflows/test.yml)
 
-See the [changelog](docs/changelog.md) for release notes and version history.
+PineFetch Link Dump is a Chrome extension for collecting video links from the page you are viewing.
+It saves you from copying links one by one across videos, profiles, and feeds.
+You can export the collected links or send them directly to your local PineFetch queue.
 
-Supported sources:
+![PineFetch Link Dump showing a detected YouTube video in Chrome with Send and Export controls](assets/images/web_browser.webp)
 
-- YouTube videos, shorts, live videos, channels, and list pages
-- TikTok videos and all currently loaded videos on profile or music pages
-- Instagram posts, reels, and all currently loaded posts on profile, reels, or tagged pages
-- Reddit posts and loaded post links on subreddit or user pages
-- X posts and loaded post links on timelines or media pages (including twitter.com links)
-- Facebook reels, videos, watch links, and loaded video links on pages
-- Direct HTTP(S) sources from standard HTML5 `<video>` elements
+Open a video or scroll a profile or feed to load the posts you want, then open the extension to review the detected links.
+Choose TXT, JSON, or CSV to save a file, copy the links, or send them to PineFetch for downloading.
+Only links already loaded on the page are collected, so scroll further before opening the extension if you need more.
 
-JSON exports include source, page, title, collection timestamp, link count, and links. CSV exports contain one link per row with the same metadata columns for analysis workflows.
+## What it does
 
-## Installation
+- Collect links from YouTube, TikTok, Instagram, Reddit, X, and Facebook.
+- Detect direct HTTP(S) video sources on other web pages.
+- Preview detected links and copy them to the clipboard.
+- Export plain link lists as TXT or save source and page details with JSON and CSV.
+- Send one video or a batch of links to a local PineFetch instance.
 
-1. Open Chrome.
-2. Open `chrome://extensions`.
-3. Enable Developer Mode.
-4. Click "Load unpacked".
-5. Select the extension folder.
+## Install
 
-## Development and packaging
+Requires desktop Google Chrome 114 or later on Windows, macOS, or Linux.
+Copying and exporting links work without PineFetch; sending links requires [PineFetch](https://oliverjessner.at/pinefetch/) running on the same computer.
 
-Use Node.js 22.12 or newer, then run:
+### Download
 
-```sh
-npm ci
-npm run check
-npm run package
-```
+1. Download the [packaged extension ZIP (v1.1.1)](https://raw.githubusercontent.com/oliverjessner/PineFetch-Link-Dump/main/dist/PineFetch-Link-Dump-1.1.1.zip) and extract it into a permanent folder.
+2. Open `chrome://extensions` in Chrome and enable **Developer mode**.
+3. Click **Load unpacked** and select the extracted folder containing `manifest.json`.
+4. Open the extension from Chrome's toolbar on a supported page.
 
-The popup uses [oj-designsystem](https://github.com/oliverjessner/oj-designsystem), pinned to version 0.1.0. `npm run build` copies its published CSS, JavaScript, Comfortaa and JetBrains Mono fonts, Font Awesome icons, and license notices into `vendor/oj-designsystem/`. These files are committed and included in the release ZIP, so the installed extension needs no Node runtime or font/icon CDN.
+See the [latest GitHub release](https://github.com/oliverjessner/PineFetch-Link-Dump/releases/latest) for the latest published release. The packaged ZIP above is distributed in this repository.
 
-OJ provides the popup's panels, buttons, fields, badges, empty states, persistent status messages, loading indicators, keyboard-accessible tabs and export-format dropdown, and copy-button tooltip. The popup initializes OJ after the DOM is ready and cleans up on `pagehide`. `popup.css` contains the popup layout and the PineFetch accent (`--oj-accent`); semantic success, warning, and error colors come from OJ independently.
+## Collect links from videos, profiles, and feeds
 
-`npm run package` validates the extension and creates `dist/PineFetch-Link-Dump-<version>.zip`. Reload the unpacked extension in `chrome://extensions` after making changes.
+Use a single video page or collect loaded links from YouTube channels and lists, TikTok profiles and music pages, Instagram profiles, Reddit listings, X timelines, and Facebook video pages. Duplicate links are removed automatically.
 
-## Configure PineFetch
+For TikTok short links, open the link first and use the extension on the resulting video page. Reddit and X listings can include posts without video, which PineFetch may be unable to download.
 
-[PineFetch](https://oliverjessner.at/pinefetch/) must be running locally. The default endpoint is:
+## Copy links or export a file
 
-```txt
-http://127.0.1:2255
-```
+Click the copy control above the detected links or choose an export format and click **Export**. TXT saves one link per line; JSON adds the source, page URL, title, collection time, and link count, while CSV saves one link per row with source and page details.
 
-![Settings tab with the PineFetch endpoint, secret, and supported platforms](assets/images/settings.png)
+![Send tab showing a detected YouTube link, the copy control, Send to PineFetch button, and TXT export controls](assets/images/send.png)
 
-## Used Endpoints
+## Send links to your PineFetch queue
 
-PineFetch uses these endpoints for every supported video URL:
+Start PineFetch, open the extension's **Settings** tab, and enter the endpoint and secret from your PineFetch settings; changes are saved automatically. The default endpoint is `http://127.0.1:2255`; return to **Send** and click **Send to PineFetch** to queue the detected links.
 
-```txt
-POST /addVideoLinkToQueue/
-POST /addVideoLinksToQueue/
-```
+![Settings tab with the local PineFetch endpoint, secret field, and supported platforms list](assets/images/settings.png)
 
-Payload for a single video:
+## Who it is for
 
-```json
-{
-    "url": "https://www.youtube.com/watch?v=...",
-    "secret": "..."
-}
-```
+- PineFetch users queuing videos while browsing.
+- Journalists and researchers collecting links from profiles and feeds.
+- Content archivists saving link lists with source and page details.
 
-Payload for multiple videos:
+## Changelog
 
-```json
-{
-    "urls": ["https://www.youtube.com/watch?v=..."],
-    "secret": "..."
-}
-```
+See the [changelog](docs/changelog.md) for release notes and changes.
 
-## Usage
+## License
 
-Single video:
-
-1. Open a YouTube video.
-2. Open the extension.
-3. Click "Send to PineFetch".
-
-YouTube channel/list page:
-
-1. Open a YouTube channel tab, for example `/streams`, `/videos`, or `/shorts`.
-2. If you need more links, scroll further down on YouTube.
-3. Open the extension.
-4. Click "Send to PineFetch" or "Export TXT".
-
-TikTok profile page:
-
-1. Open a profile, for example `https://www.tiktok.com/@oliverjessner`.
-2. Scroll down until TikTok has loaded the videos you want.
-3. Open the extension.
-4. Click "Send to PineFetch" or "Export TXT". Only video URLs belonging to the opened profile are included.
-
-TikTok music page:
-
-1. Open a TikTok `/music/...` page.
-2. Scroll until TikTok has loaded the videos you want.
-3. Open the extension and click "Send to PineFetch" or "Export TXT".
-
-TikTok `vm.tiktok.com` and `vt.tiktok.com` links only contain redirect tokens, so the
-extension cannot resolve them reliably without a network redirect. Open the short
-link first and run the extension on the resulting canonical TikTok page.
-
-Instagram profile page:
-
-1. Open an Instagram profile or its `/reels/` or `/tagged/` tab.
-2. Sign in if the profile requires it, then scroll until Instagram has loaded the posts you want.
-3. Open the extension.
-4. Click "Send to PineFetch" or "Export TXT". Single `/p/`, `/reel/`, and legacy `/tv/` URLs are also supported.
-
-Reddit, X, or Facebook:
-
-1. Open a post or video page, or scroll a listing to load more links.
-2. Open the extension and click "Send to PineFetch" or "Export TXT". Reddit and X listings collect post links, including posts without video; those links may fail when PineFetch processes them.
-
-## Provider architecture
-
-Source-specific page detection is isolated in `providers/`:
-
-- `youtube.js`
-- `tiktok.js`
-- `instagram.js`
-- `reddit.js`
-- `x.js`
-- `facebook.js`
-- `standard-video.js` (fallback for regular HTML5 video pages)
-
-To add another social platform, register its provider before the standard-video fallback and add the script to `popup.html`.
-
-## Permission hardening note
-
-The extension currently retains `<all_urls>` host permission. Page-script injection
-is also gated by `activeTab`, but PineFetch endpoint requests and injection behavior
-must be verified in a packaged Chrome build before narrowing the persistent host
-patterns. This remains a manual browser-hardening check; automated Node tests cannot
-prove Chrome's permission behavior on arbitrary sites.
-
-## Look and feel
-
-![Send tab with a detected YouTube video, Send to PineFetch, and export controls](assets/images/send.png)
+MIT
